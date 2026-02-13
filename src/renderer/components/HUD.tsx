@@ -194,6 +194,28 @@ export const HUD: React.FC = () => {
           </label>
 
           <label style={{ fontSize: 11, opacity: 0.7 }}>
+            Weather
+            <select
+              data-interactive="true"
+              value={config.weatherOverride ?? ''}
+              onChange={(e) =>
+                setConfig({
+                  weatherOverride: e.target.value === '' ? null : (e.target.value as any),
+                })
+              }
+              style={inputStyle}
+            >
+              <option value="">Auto (live data)</option>
+              <option value="CLEAR">☀ Clear</option>
+              <option value="CLOUDY">☁ Cloudy</option>
+              <option value="RAIN">🌧 Rain</option>
+              <option value="THUNDERSTORM">⛈ Thunderstorm</option>
+              <option value="SNOW">❄ Snow</option>
+              <option value="FOG">🌫 Fog</option>
+            </select>
+          </label>
+
+          <label style={{ fontSize: 11, opacity: 0.7 }}>
             Overlay Opacity: {Math.round((config.overlayOpacity ?? 1) * 100)}%
             <input
               data-interactive="true"

@@ -26,6 +26,8 @@ export interface AppConfig {
   opaqueBackground: boolean;
   /** Overall overlay opacity 0 (fully transparent) to 1 (fully opaque). */
   overlayOpacity: number;
+  /** Manual weather override — null means use live data. */
+  weatherOverride: WeatherCondition | null;
 }
 
 export interface EnvironmentState {

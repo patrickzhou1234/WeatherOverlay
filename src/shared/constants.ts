@@ -8,6 +8,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   highPerformanceMode: false,
   opaqueBackground: false,
   overlayOpacity: 1,
+  weatherOverride: null,
 };
 
 export const DEFAULT_ENVIRONMENT: EnvironmentState = {

@@ -108,15 +108,21 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     const next = { ...get().config, ...partial };
     persistConfig(next);
     set({ config: next });
+
+    // If weatherOverride changed, apply it to environment immediately
+    if ('weatherOverride' in partial) {
+      const condition = next.weatherOverride ?? get().environment.condition;
+      set({ environment: { ...get().environment, condition } });
+    }
   },
 
   syncEnvironment: (obs) => {
-    const { system } = get();
+    const { system, config } = get();
     const timeOfDay = getTimeOfDay();
     const chaos = chaosMultiplier(system.cpuLoad);
 
     const env: EnvironmentState = {
-      condition: obs.condition,
+      condition: config.weatherOverride ?? obs.condition,
       timeOfDay,
       temperature: obs.temperature,
       windSpeed: obs.windSpeed * chaos,
