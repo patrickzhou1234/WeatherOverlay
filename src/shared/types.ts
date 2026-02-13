@@ -24,6 +24,8 @@ export interface AppConfig {
   highPerformanceMode: boolean;
   /** When true the overlay has an opaque dark background instead of transparent. */
   opaqueBackground: boolean;
+  /** Overall overlay opacity 0 (fully transparent) to 1 (fully opaque). */
+  overlayOpacity: number;
 }
 
 export interface EnvironmentState {

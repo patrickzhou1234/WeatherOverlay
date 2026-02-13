@@ -72,8 +72,6 @@ function createWindow(): void {
   // Load the renderer
   if (isDev) {
     loadRendererWithRetry(mainWindow, DEV_SERVER_URL);
-    // Open DevTools detached so they don't affect the overlay layout
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
   }

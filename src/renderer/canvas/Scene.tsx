@@ -45,6 +45,8 @@ const WeatherEffects: React.FC = () => {
 };
 
 export const Scene: React.FC = () => {
+  const overlayOpacity = useStore((s) => s.config.overlayOpacity);
+
   return (
     <Canvas
       // Transparent so the Electron window transparency shows through
@@ -53,6 +55,7 @@ export const Scene: React.FC = () => {
         position: 'absolute',
         inset: 0,
         background: 'transparent',
+        opacity: overlayOpacity,
       }}
       camera={{ position: [0, 0, 5], fov: 60 }}
       // §5-1 — cap the internal frame loop

@@ -103,7 +103,7 @@ export const HUD: React.FC = () => {
           top: 12,
           left: 16,
           fontSize: 11,
-          opacity: 0.7,
+          opacity: 0.7 * (config.overlayOpacity ?? 1),
           letterSpacing: 1,
         }}
       >
@@ -191,6 +191,28 @@ export const HUD: React.FC = () => {
               }}
             />
             Opaque Background (disable transparency)
+          </label>
+
+          <label style={{ fontSize: 11, opacity: 0.7 }}>
+            Overlay Opacity: {Math.round((config.overlayOpacity ?? 1) * 100)}%
+            <input
+              data-interactive="true"
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={config.overlayOpacity ?? 1}
+              onChange={(e) =>
+                setConfig({ overlayOpacity: parseFloat(e.target.value) })
+              }
+              style={{
+                display: 'block',
+                width: '100%',
+                marginTop: 4,
+                accentColor: 'rgba(80,140,255,0.85)',
+                cursor: 'pointer',
+              }}
+            />
           </label>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>

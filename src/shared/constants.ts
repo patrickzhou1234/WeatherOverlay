@@ -7,6 +7,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   refreshInterval: 600_000, // 10 minutes
   highPerformanceMode: false,
   opaqueBackground: false,
+  overlayOpacity: 1,
 };
 
 export const DEFAULT_ENVIRONMENT: EnvironmentState = {
