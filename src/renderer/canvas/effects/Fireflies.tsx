@@ -43,6 +43,7 @@ export const Fireflies: React.FC = () => {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
 
   const highPerf = useStore((s) => s.config.highPerformanceMode);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
   const count = useMemo(() => (highPerf ? FLY_COUNT * 2 : FLY_COUNT), [highPerf]);
 
   const flies = useMemo(() => {
@@ -82,7 +83,7 @@ export const Fireflies: React.FC = () => {
 
   useFrame((_, delta) => {
     accum += delta;
-    globalTime += delta;
+    globalTime += delta * particleSpeed;
     if (accum < frameInterval) return;
     accum = 0;
     if (!meshRef.current) return;

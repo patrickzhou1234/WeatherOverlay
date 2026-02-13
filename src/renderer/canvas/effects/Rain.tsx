@@ -45,6 +45,7 @@ export const Rain: React.FC = () => {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
 
   const highPerf = useStore((s) => s.config.highPerformanceMode);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
   const windSpeed = useStore((s) => s.environment.windSpeed);
   const condition = useStore((s) => s.environment.condition);
 
@@ -83,8 +84,8 @@ export const Rain: React.FC = () => {
     accum = 0;
     if (!meshRef.current) return;
 
-    const windDrift = windSpeed * 0.025;
-    const speedMul = isThunder ? 2.2 : 1.0;
+    const windDrift = windSpeed * 0.025 * particleSpeed;
+    const speedMul = (isThunder ? 2.2 : 1.0) * particleSpeed;
     const windAngle = Math.atan2(windDrift, 1) * 0.6;
 
     for (let i = 0; i < count; i++) {

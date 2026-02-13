@@ -29,6 +29,7 @@ export const TechnoTunnel: React.FC = () => {
   const starsRef = useRef<THREE.InstancedMesh>(null!);
 
   const highPerf = useStore((s) => s.config.highPerformanceMode);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
 
   const starCount = useMemo(() => (highPerf ? 400 : 200), [highPerf]);
 
@@ -93,7 +94,7 @@ export const TechnoTunnel: React.FC = () => {
     const dt = accum;
     accum = 0;
 
-    const speed = 6; // tunnel scroll speed
+    const speed = 6 * particleSpeed; // tunnel scroll speed
 
     // ── Update rings ──
     for (let i = 0; i < RING_COUNT; i++) {

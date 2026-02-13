@@ -43,6 +43,7 @@ export const Snow: React.FC = () => {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
 
   const highPerf = useStore((s) => s.config.highPerformanceMode);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
   const windSpeed = useStore((s) => s.environment.windSpeed);
 
   const count = useMemo(
@@ -86,13 +87,13 @@ export const Snow: React.FC = () => {
     accum = 0;
     if (!meshRef.current) return;
 
-    const windDrift = windSpeed * 0.006;
+    const windDrift = windSpeed * 0.006 * particleSpeed;
 
     for (let i = 0; i < count; i++) {
       const { pos, spd, size, phase, swayAmp, rotSpd } = flakes;
 
       // Fall
-      pos[i * 3 + 1] -= spd[i] * dt * 60;
+      pos[i * 3 + 1] -= spd[i] * particleSpeed * dt * 60;
 
       // Gentle sway
       pos[i * 3] +=

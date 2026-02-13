@@ -40,6 +40,8 @@ export interface AppConfig {
   temperatureUnit: 'C' | 'F';
   /** Custom visual effect layered alongside weather — null means none. */
   customEffect: CustomEffect | null;
+  /** Particle speed multiplier 0.1 (very slow) to 2.0 (double speed). Default 1. */
+  particleSpeed: number;
 }
 
 export interface EnvironmentState {

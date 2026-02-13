@@ -427,6 +427,32 @@ export const HUD: React.FC = () => {
               />
             </div>
 
+            {/* ── Particle Speed ── */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MIcon name="speed" size={15} color={ON_SURFACE_MED} />
+                  <span style={labelTextStyle}>Particle Speed</span>
+                </div>
+                <span className="md-badge">
+                  {Math.round((config.particleSpeed ?? 1) * 100)}%
+                </span>
+              </div>
+              <input
+                data-interactive="true"
+                type="range"
+                min={0.1}
+                max={2}
+                step={0.05}
+                value={config.particleSpeed ?? 1}
+                onChange={(e) =>
+                  setConfig({ particleSpeed: parseFloat(e.target.value) })
+                }
+                className="md-slider"
+                style={{ width: '100%', cursor: 'pointer' }}
+              />
+            </div>
+
             {/* Divider */}
             <div style={{ height: 1, background: OUTLINE }} />
 

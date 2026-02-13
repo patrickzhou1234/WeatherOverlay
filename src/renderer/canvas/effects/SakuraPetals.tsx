@@ -67,6 +67,7 @@ export const SakuraPetals: React.FC = () => {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
 
   const highPerf = useStore((s) => s.config.highPerformanceMode);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
   const windSpeed = useStore((s) => s.environment.windSpeed);
 
   const count = useMemo(
@@ -111,13 +112,13 @@ export const SakuraPetals: React.FC = () => {
     accum = 0;
     if (!meshRef.current) return;
 
-    const windDrift = windSpeed * 0.008 + 0.004; // always a little breeze
+    const windDrift = (windSpeed * 0.008 + 0.004) * particleSpeed; // always a little breeze
 
     for (let i = 0; i < count; i++) {
       const { pos, spd, size, phase, wobbleAmp, spinSpd, tiltSpd } = petals;
 
       // Gentle fall
-      pos[i * 3 + 1] -= spd[i] * dt * 60;
+      pos[i * 3 + 1] -= spd[i] * particleSpeed * dt * 60;
 
       // Horizontal sway — sinusoidal wobble + wind
       pos[i * 3] +=

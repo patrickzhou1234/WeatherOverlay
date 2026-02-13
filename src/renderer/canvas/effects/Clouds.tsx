@@ -69,6 +69,7 @@ export const Clouds: React.FC = () => {
 
   const condition = useStore((s) => s.environment.condition);
   const windSpeed = useStore((s) => s.environment.windSpeed);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
 
   const isFog = condition === 'FOG';
 
@@ -114,12 +115,12 @@ export const Clouds: React.FC = () => {
     accum = 0;
     if (!meshRef.current) return;
 
-    const windDrift = windSpeed * (isFog ? 0.0008 : 0.003);
+    const windDrift = windSpeed * (isFog ? 0.0008 : 0.003) * particleSpeed;
 
     for (let i = 0; i < MAX_PUFFS; i++) {
       const p = puffs[i];
 
-      p.x += (p.speed + windDrift) * dt * 60;
+      p.x += (p.speed * particleSpeed + windDrift) * dt * 60;
 
       // Gentle vertical bob
       const yOff = Math.sin(globalTime * 0.3 + p.phase) * 0.08;

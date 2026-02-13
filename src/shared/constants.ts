@@ -11,6 +11,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   weatherOverride: null,
   temperatureUnit: 'F',
   customEffect: null,
+  particleSpeed: 1,
 };
 
 export const DEFAULT_ENVIRONMENT: EnvironmentState = {

@@ -77,6 +77,7 @@ export const HydroBlast: React.FC = () => {
   const mistRef = useRef<THREE.InstancedMesh>(null!);
 
   const highPerf = useStore((s) => s.config.highPerformanceMode);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
 
   const count = useMemo(
     () => Math.round((highPerf ? PARTICLE_CAP_HIGH : PARTICLE_CAP_NORMAL) * 0.5),
@@ -166,12 +167,12 @@ export const HydroBlast: React.FC = () => {
         }
 
         // Apply gravity
-        vel[i * 3 + 1] += GRAVITY * dt * 60;
+        vel[i * 3 + 1] += GRAVITY * particleSpeed * dt * 60;
 
         // Move
-        pos[i * 3] += vel[i * 3] * dt * 60;
-        pos[i * 3 + 1] += vel[i * 3 + 1] * dt * 60;
-        pos[i * 3 + 2] += vel[i * 3 + 2] * dt * 60;
+        pos[i * 3] += vel[i * 3] * particleSpeed * dt * 60;
+        pos[i * 3 + 1] += vel[i * 3 + 1] * particleSpeed * dt * 60;
+        pos[i * 3 + 2] += vel[i * 3 + 2] * particleSpeed * dt * 60;
 
         // Fade based on remaining life
         const lifeRatio = Math.max(0, life[i] / maxLife[i]);

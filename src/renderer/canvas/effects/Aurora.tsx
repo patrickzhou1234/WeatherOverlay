@@ -30,6 +30,7 @@ export const Aurora: React.FC = () => {
   const ribbonRefs = useRef<THREE.Mesh[]>([]);
 
   const highPerf = useStore((s) => s.config.highPerformanceMode);
+  const particleSpeed = useStore((s) => s.config.particleSpeed);
   const segCount = useMemo(() => (highPerf ? SEGMENTS : Math.round(SEGMENTS * 0.6)), [highPerf]);
 
   const ribbons: RibbonDef[] = useMemo(
@@ -92,7 +93,7 @@ export const Aurora: React.FC = () => {
 
   useFrame((_, delta) => {
     accum += delta;
-    globalTime += delta;
+    globalTime += delta * particleSpeed;
     if (accum < frameInterval) return;
     accum = 0;
 
