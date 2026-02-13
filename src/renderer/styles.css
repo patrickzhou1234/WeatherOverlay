@@ -2,6 +2,8 @@
    Global Styles — Transparent body, no scrollbars
    ───────────────────────────────────────────────────────── */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -15,6 +17,7 @@ html, body, #root {
   background: transparent;
   -webkit-app-region: no-drag;
   user-select: none;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 /* Allow text selection / interaction inside the settings panel */
@@ -26,4 +29,60 @@ input, button, select, textarea, [data-interactive="true"] {
 /* Scrollbar-free */
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* ── Custom range slider styling ─────────────────────── */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6b8afd;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* ── Select dropdown styling ──────────────────────────── */
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.4)' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px !important;
+}
+
+select option {
+  background: #1a1a2e;
+  color: #e8eaed;
+}
+
+/* ── Focus styles ─────────────────────────────────────── */
+
+input:focus, select:focus {
+  border-color: rgba(107, 138, 253, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(107, 138, 253, 0.1);
+}
+
+/* ── Button hover ─────────────────────────────────────── */
+
+button:hover {
+  opacity: 0.85;
 }

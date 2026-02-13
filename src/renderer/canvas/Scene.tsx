@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────
 // Scene.tsx — R3F Canvas root
 // Sets up the Three.js canvas with a transparent background,
-// the sky-gradient backdrop, weather effects, and city lights.
+// the sky-gradient backdrop, and weather effects.
 // FPS is capped at TARGET_FPS (§5-1 Feedback Loop mitigation).
 // ─────────────────────────────────────────────────────────
 
@@ -9,7 +9,7 @@ import React, { useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Rain } from './effects/Rain';
 import { Snow } from './effects/Snow';
-import { CityLights } from './effects/CityLights';
+import { Clouds } from './effects/Clouds';
 import { SkyGradient } from './effects/SkyGradient';
 import { useStore } from '../store/useStore';
 import { TARGET_FPS } from '../../shared/constants';
@@ -24,9 +24,6 @@ const FrameLimiter: React.FC = () => {
     elapsed += delta;
     if (elapsed < interval) return;
     elapsed = 0;
-    // The actual rendering is done by R3F automatically;
-    // We simply throttle the amount of work inside effect components
-    // by gating their updates with the same interval check.
   });
 
   return null;
@@ -36,20 +33,25 @@ const FrameLimiter: React.FC = () => {
 const WeatherEffects: React.FC = () => {
   const condition = useStore((s) => s.environment.condition);
 
+  if (condition === 'CLEAR') return null;
+
   return (
     <>
       {(condition === 'RAIN' || condition === 'THUNDERSTORM') && <Rain />}
       {condition === 'SNOW' && <Snow />}
+      {(condition === 'CLOUDY' || condition === 'FOG') && <Clouds />}
     </>
   );
 };
 
 export const Scene: React.FC = () => {
   const overlayOpacity = useStore((s) => s.config.overlayOpacity);
+  const condition = useStore((s) => s.environment.condition);
+
+  const isClear = condition === 'CLEAR';
 
   return (
     <Canvas
-      // Transparent so the Electron window transparency shows through
       gl={{ alpha: true, antialias: false, powerPreference: 'low-power' }}
       style={{
         position: 'absolute',
@@ -58,13 +60,11 @@ export const Scene: React.FC = () => {
         opacity: overlayOpacity,
       }}
       camera={{ position: [0, 0, 5], fov: 60 }}
-      // §5-1 — cap the internal frame loop
       frameloop="always"
     >
       <FrameLimiter />
-      <SkyGradient />
+      {!isClear && <SkyGradient />}
       <WeatherEffects />
-      <CityLights />
     </Canvas>
   );
 };

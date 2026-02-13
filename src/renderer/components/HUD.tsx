@@ -1,12 +1,34 @@
 // ─────────────────────────────────────────────────────────
-// HUD.tsx — HTML Overlay (Settings panel, error banner)
-// Interactive elements carry data-interactive="true" so the
-// mouse-passthrough hook knows to capture clicks (§3-A).
+// HUD.tsx — Glassmorphism overlay UI
+// Modern, clean settings panel + minimal status chips.
 // ─────────────────────────────────────────────────────────
 
 import React, { useState, useCallback, useEffect, FormEvent } from 'react';
 import { useStore } from '../store/useStore';
 import { IPC_CHANNELS } from '../../shared/types';
+
+// ── Shared style tokens ───────────────────────────────
+
+const FONT = "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif";
+const GLASS = {
+  background: 'rgba(12, 12, 20, 0.72)',
+  backdropFilter: 'blur(20px) saturate(1.4)',
+  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+  border: '1px solid rgba(255,255,255,0.08)',
+} as React.CSSProperties;
+
+const ACCENT = '#6b8afd';
+const MUTED = 'rgba(255,255,255,0.45)';
+
+/** Weather condition → emoji + label map */
+const CONDITION_LABELS: Record<string, string> = {
+  CLEAR: '☀ Clear',
+  CLOUDY: '☁ Cloudy',
+  RAIN: '🌧 Rain',
+  THUNDERSTORM: '⛈ Storm',
+  SNOW: '❄ Snow',
+  FOG: '🌫 Fog',
+};
 
 export const HUD: React.FC = () => {
   const config = useStore((s) => s.config);
@@ -17,15 +39,10 @@ export const HUD: React.FC = () => {
   const setSettingsVisible = useStore((s) => s.setSettingsVisible);
   const setError = useStore((s) => s.setError);
 
-  // Settings visibility is now driven by the store (synced with tray IPC)
   const settingsOpen = ui.settingsVisible;
-
   const [localZip, setLocalZip] = useState(config.zipCode ?? '');
 
-  // ── Sync interactive state with main process on mount ──
-  // If the store already has settings visible (e.g. first launch, no ZIP)
-  // we must tell the main process to make the window clickable immediately.
-  // Also sync the persisted opaqueBackground state.
+  // ── Sync interactive state on mount ──
   useEffect(() => {
     if (useStore.getState().ui.settingsVisible) {
       window.electronAPI?.send(IPC_CHANNELS.SET_INTERACTIVE, true);
@@ -35,15 +52,12 @@ export const HUD: React.FC = () => {
     }
   }, []);
 
-  // ── Toggle settings panel ────────────────────────────
   const toggleSettings = useCallback(() => {
     const next = !settingsOpen;
     setSettingsVisible(next);
-    // Inform main process so it can toggle click-through
     window.electronAPI?.send(IPC_CHANNELS.SET_INTERACTIVE, next);
   }, [settingsOpen, setSettingsVisible]);
 
-  // ── Save config ──────────────────────────────────────
   const handleSave = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
@@ -58,18 +72,20 @@ export const HUD: React.FC = () => {
     [localZip, setConfig, setError, toggleSettings],
   );
 
+  const overlayAlpha = config.overlayOpacity ?? 1;
+
   return (
     <div
       style={{
         position: 'absolute',
         inset: 0,
-        pointerEvents: 'none', // let clicks fall through by default
-        fontFamily: "'Courier New', monospace",
-        color: '#e0e0e0',
+        pointerEvents: 'none',
+        fontFamily: FONT,
+        color: '#e8eaed',
         zIndex: 10,
       }}
     >
-      {/* ── Gear toggle button (always visible, bottom-right) ── */}
+      {/* ── Settings gear (bottom-right) ── */}
       <button
         data-interactive="true"
         onClick={toggleSettings}
@@ -77,43 +93,60 @@ export const HUD: React.FC = () => {
         style={{
           pointerEvents: 'auto',
           position: 'absolute',
-          bottom: 24,
-          right: 24,
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          border: '1px solid rgba(255,255,255,0.3)',
-          background: 'rgba(0,0,0,0.45)',
-          color: '#fff',
-          fontSize: 20,
+          bottom: 20,
+          right: 20,
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          border: '1px solid rgba(255,255,255,0.1)',
+          ...GLASS,
+          color: 'rgba(255,255,255,0.7)',
+          fontSize: 16,
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backdropFilter: 'blur(4px)',
+          transition: 'all 0.2s ease',
         }}
       >
         ⚙
       </button>
 
-      {/* ── Mini status bar (top-left) ── */}
+      {/* ── Status chips (bottom-left) ── */}
       <div
         style={{
           position: 'absolute',
-          top: 12,
-          left: 16,
-          fontSize: 11,
-          opacity: 0.7 * (config.overlayOpacity ?? 1),
-          letterSpacing: 1,
+          bottom: 20,
+          left: 20,
+          display: 'flex',
+          gap: 6,
+          opacity: overlayAlpha * 0.85,
+          transition: 'opacity 0.3s ease',
         }}
       >
-        {environment.condition} · {environment.timeOfDay} ·{' '}
-        {Math.round(environment.temperature)}°C · 💨{' '}
-        {environment.windSpeed.toFixed(1)} m/s
-        <br />
-        CPU {system.cpuLoad}% · MEM {system.memoryUsage}%
+        {/* Weather chip */}
+        <div style={chipStyle}>
+          {CONDITION_LABELS[environment.condition] ?? environment.condition}
+          {' · '}
+          {Math.round(environment.temperature)}°
+        </div>
+
+        {/* Wind chip */}
+        <div style={chipStyle}>
+          💨 {environment.windSpeed.toFixed(1)} m/s
+        </div>
+
+        {/* System chip */}
+        <div style={chipStyle}>
+          CPU {system.cpuLoad}%
+          {' · '}
+          MEM {system.memoryUsage}%
+        </div>
+
         {system.isBatteryLow && (
-          <span style={{ color: '#ff6b6b' }}> · 🔋 LOW</span>
+          <div style={{ ...chipStyle, borderColor: 'rgba(255,100,100,0.3)', color: '#ff8a8a' }}>
+            🔋 Low
+          </div>
         )}
       </div>
 
@@ -122,13 +155,17 @@ export const HUD: React.FC = () => {
         <div
           style={{
             position: 'absolute',
-            top: 60,
-            left: 16,
-            right: 16,
-            padding: '8px 12px',
-            background: 'rgba(255,60,60,0.75)',
-            borderRadius: 6,
+            top: 20,
+            left: 20,
+            right: 20,
+            padding: '10px 14px',
+            ...GLASS,
+            background: 'rgba(200,40,40,0.65)',
+            borderRadius: 10,
+            borderColor: 'rgba(255,100,100,0.2)',
             fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: 0.2,
           }}
         >
           ⚠ {ui.errorMessage}
@@ -143,21 +180,28 @@ export const HUD: React.FC = () => {
           style={{
             pointerEvents: 'auto',
             position: 'absolute',
-            bottom: 80,
-            right: 24,
-            width: 280,
-            padding: 16,
-            background: 'rgba(20,20,30,0.88)',
-            borderRadius: 10,
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            bottom: 64,
+            right: 20,
+            width: 300,
+            padding: 20,
+            ...GLASS,
+            borderRadius: 14,
             display: 'flex',
             flexDirection: 'column',
-            gap: 10,
+            gap: 14,
           }}
         >
-          <label style={{ fontSize: 11, opacity: 0.7 }}>
-            US ZIP Code
+          {/* Title */}
+          <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.5, color: 'rgba(255,255,255,0.9)' }}>
+            Settings
+          </div>
+
+          {/* Divider */}
+          <div style={dividerStyle} />
+
+          {/* ZIP Code */}
+          <div style={fieldWrap}>
+            <span style={labelStyle}>Location (US ZIP)</span>
             <input
               data-interactive="true"
               type="text"
@@ -166,35 +210,11 @@ export const HUD: React.FC = () => {
               placeholder="e.g. 90210"
               style={inputStyle}
             />
-          </label>
+          </div>
 
-          <label style={{ fontSize: 11, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input
-              data-interactive="true"
-              type="checkbox"
-              checked={config.highPerformanceMode}
-              onChange={(e) =>
-                setConfig({ highPerformanceMode: e.target.checked })
-              }
-            />
-            High-Performance Mode (more particles)
-          </label>
-
-          <label style={{ fontSize: 11, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input
-              data-interactive="true"
-              type="checkbox"
-              checked={config.opaqueBackground}
-              onChange={(e) => {
-                setConfig({ opaqueBackground: e.target.checked });
-                window.electronAPI?.send(IPC_CHANNELS.SET_OPAQUE, e.target.checked);
-              }}
-            />
-            Opaque Background (disable transparency)
-          </label>
-
-          <label style={{ fontSize: 11, opacity: 0.7 }}>
-            Weather
+          {/* Weather override */}
+          <div style={fieldWrap}>
+            <span style={labelStyle}>Weather</span>
             <select
               data-interactive="true"
               value={config.weatherOverride ?? ''}
@@ -205,7 +225,7 @@ export const HUD: React.FC = () => {
               }
               style={inputStyle}
             >
-              <option value="">Auto (live data)</option>
+              <option value="">Auto (live)</option>
               <option value="CLEAR">☀ Clear</option>
               <option value="CLOUDY">☁ Cloudy</option>
               <option value="RAIN">🌧 Rain</option>
@@ -213,10 +233,16 @@ export const HUD: React.FC = () => {
               <option value="SNOW">❄ Snow</option>
               <option value="FOG">🌫 Fog</option>
             </select>
-          </label>
+          </div>
 
-          <label style={{ fontSize: 11, opacity: 0.7 }}>
-            Overlay Opacity: {Math.round((config.overlayOpacity ?? 1) * 100)}%
+          {/* Opacity slider */}
+          <div style={fieldWrap}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={labelStyle}>Opacity</span>
+              <span style={{ ...labelStyle, fontVariantNumeric: 'tabular-nums' }}>
+                {Math.round((config.overlayOpacity ?? 1) * 100)}%
+              </span>
+            </div>
             <input
               data-interactive="true"
               type="range"
@@ -227,29 +253,50 @@ export const HUD: React.FC = () => {
               onChange={(e) =>
                 setConfig({ overlayOpacity: parseFloat(e.target.value) })
               }
-              style={{
-                display: 'block',
-                width: '100%',
-                marginTop: 4,
-                accentColor: 'rgba(80,140,255,0.85)',
-                cursor: 'pointer',
-              }}
+              style={sliderStyle}
             />
+          </div>
+
+          <div style={dividerStyle} />
+
+          {/* Toggles */}
+          <label style={toggleRowStyle}>
+            <input
+              data-interactive="true"
+              type="checkbox"
+              checked={config.highPerformanceMode}
+              onChange={(e) => setConfig({ highPerformanceMode: e.target.checked })}
+              style={checkboxStyle}
+            />
+            <span>High quality particles</span>
           </label>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button
+          <label style={toggleRowStyle}>
+            <input
               data-interactive="true"
-              type="submit"
-              style={btnStyle}
-            >
+              type="checkbox"
+              checked={config.opaqueBackground}
+              onChange={(e) => {
+                setConfig({ opaqueBackground: e.target.checked });
+                window.electronAPI?.send(IPC_CHANNELS.SET_OPAQUE, e.target.checked);
+              }}
+              style={checkboxStyle}
+            />
+            <span>Opaque background</span>
+          </label>
+
+          <div style={dividerStyle} />
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button data-interactive="true" type="submit" style={primaryBtnStyle}>
               Save
             </button>
             <button
               data-interactive="true"
               type="button"
               onClick={toggleSettings}
-              style={{ ...btnStyle, background: 'rgba(255,255,255,0.08)' }}
+              style={ghostBtnStyle}
             >
               Cancel
             </button>
@@ -260,31 +307,107 @@ export const HUD: React.FC = () => {
   );
 };
 
-// ── Inline style helpers ──────────────────────────────
+// ── Style constants ───────────────────────────────────
 
-const inputStyle: React.CSSProperties = {
-  display: 'block',
-  width: '100%',
-  marginTop: 4,
-  padding: '6px 8px',
-  borderRadius: 4,
-  border: '1px solid rgba(255,255,255,0.15)',
-  background: 'rgba(255,255,255,0.06)',
-  color: '#e0e0e0',
-  fontFamily: "'Courier New', monospace",
-  fontSize: 13,
-  outline: 'none',
-  boxSizing: 'border-box',
+const chipStyle: React.CSSProperties = {
+  padding: '4px 10px',
+  borderRadius: 8,
+  background: 'rgba(12, 12, 20, 0.55)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.06)',
+  fontSize: 11,
+  fontWeight: 500,
+  letterSpacing: 0.3,
+  color: 'rgba(255,255,255,0.7)',
+  whiteSpace: 'nowrap',
 };
 
-const btnStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '7px 0',
-  borderRadius: 5,
-  border: 'none',
-  background: 'rgba(80,140,255,0.55)',
-  color: '#fff',
-  fontFamily: "'Courier New', monospace",
-  fontSize: 12,
+const dividerStyle: React.CSSProperties = {
+  height: 1,
+  background: 'rgba(255,255,255,0.06)',
+  margin: '0 -4px',
+};
+
+const fieldWrap: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 500,
+  color: MUTED,
+  letterSpacing: 0.4,
+  textTransform: 'uppercase',
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 10px',
+  borderRadius: 8,
+  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'rgba(255,255,255,0.04)',
+  color: '#e8eaed',
+  fontFamily: FONT,
+  fontSize: 13,
+  fontWeight: 400,
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.2s ease',
+};
+
+const sliderStyle: React.CSSProperties = {
+  width: '100%',
+  height: 4,
+  accentColor: ACCENT,
   cursor: 'pointer',
+};
+
+const toggleRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 12,
+  fontWeight: 400,
+  color: 'rgba(255,255,255,0.75)',
+  cursor: 'pointer',
+};
+
+const checkboxStyle: React.CSSProperties = {
+  accentColor: ACCENT,
+  width: 14,
+  height: 14,
+  cursor: 'pointer',
+};
+
+const primaryBtnStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '8px 0',
+  borderRadius: 8,
+  border: 'none',
+  background: ACCENT,
+  color: '#fff',
+  fontFamily: FONT,
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: 0.3,
+  cursor: 'pointer',
+  transition: 'opacity 0.15s ease',
+};
+
+const ghostBtnStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '8px 0',
+  borderRadius: 8,
+  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'rgba(255,255,255,0.04)',
+  color: 'rgba(255,255,255,0.6)',
+  fontFamily: FONT,
+  fontSize: 12,
+  fontWeight: 500,
+  letterSpacing: 0.3,
+  cursor: 'pointer',
+  transition: 'opacity 0.15s ease',
 };
