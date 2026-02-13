@@ -1,8 +1,13 @@
 /* ─────────────────────────────────────────────────────────
-   Global Styles — Transparent body, no scrollbars
+   Material Design 3 — Global Styles
+   Transparent body, gradient accents, clean interactions
    ───────────────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+/* Google Fonts — Inter for text, Material Symbols for icons */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+
+/* ── Reset ────────────────────────────────────────────── */
 
 *, *::before, *::after {
   margin: 0;
@@ -17,72 +22,221 @@ html, body, #root {
   background: transparent;
   -webkit-app-region: no-drag;
   user-select: none;
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Roboto', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Allow text selection / interaction inside the settings panel */
+/* Allow interaction inside the settings panel */
 input, button, select, textarea, [data-interactive="true"] {
   user-select: auto;
   -webkit-app-region: no-drag;
 }
 
-/* Scrollbar-free */
 ::-webkit-scrollbar {
   display: none;
 }
 
-/* ── Custom range slider styling ─────────────────────── */
+/* ── Material Input fields ────────────────────────────── */
 
-input[type="range"] {
+.md-input,
+.md-select {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.md-input:hover,
+.md-select:hover {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+.md-input:focus,
+.md-select:focus {
+  border-color: rgba(102, 126, 234, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.md-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Material Select dropdown ─────────────────────────── */
+
+.md-select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.4)' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  padding-right: 30px !important;
+  cursor: pointer;
+}
+
+.md-select option {
+  background: #1e1e30;
+  color: #e8eaed;
+  padding: 8px;
+}
+
+/* ── Material Slider — gradient track ─────────────────── */
+
+.md-slider {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   outline: none;
+  position: relative;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+.md-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(102, 126, 234, 0.15) 0%,
+    rgba(102, 126, 234, 0.15) 100%
+  );
+}
+
+.md-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: #6b8afd;
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: transform 0.12s ease;
+  margin-top: -7px;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.15s ease;
 }
 
-input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+.md-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.55);
 }
 
-/* ── Select dropdown styling ──────────────────────────── */
-
-select {
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.4)' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  padding-right: 28px !important;
+.md-slider::-webkit-slider-thumb:active {
+  transform: scale(1.25);
 }
 
-select option {
-  background: #1a1a2e;
-  color: #e8eaed;
+/* ── Material FAB (floating action button) ────────────── */
+
+.md-fab {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s ease !important;
 }
 
-/* ── Focus styles ─────────────────────────────────────── */
-
-input:focus, select:focus {
-  border-color: rgba(107, 138, 253, 0.4) !important;
-  box-shadow: 0 0 0 2px rgba(107, 138, 253, 0.1);
+.md-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.35),
+              0 6px 8px rgba(0, 0, 0, 0.25) !important;
+  opacity: 1 !important;
 }
 
-/* ── Button hover ─────────────────────────────────────── */
+.md-fab:active {
+  transform: scale(0.97);
+}
 
-button:hover {
-  opacity: 0.85;
+/* ── Material Buttons ─────────────────────────────────── */
+
+.md-btn-primary {
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.md-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.45) !important;
+  opacity: 1 !important;
+}
+
+.md-btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.md-btn-ghost {
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+}
+
+.md-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  opacity: 1 !important;
+}
+
+/* ── Material Badge (opacity percentage) ──────────────── */
+
+.md-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(102, 126, 234, 0.15);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+
+/* ── Material Status Card ─────────────────────────────── */
+
+.md-status-card {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s ease;
+}
+
+/* ── Material Settings Card ───────────────────────────── */
+
+.md-settings {
+  animation: md-slide-up 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes md-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Material Snackbar ────────────────────────────────── */
+
+.md-snackbar {
+  animation: md-fade-in 0.3s ease;
+}
+
+@keyframes md-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ── Material Switch ──────────────────────────────────── */
+
+.md-switch {
+  transition: background 0.25s ease;
+}
+
+/* ── Prevent default button styles from leaking ───────── */
+
+button {
+  font-family: inherit;
+}
+
+button:focus-visible {
+  outline: 2px solid rgba(102, 126, 234, 0.6);
+  outline-offset: 2px;
 }

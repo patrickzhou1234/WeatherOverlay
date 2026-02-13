@@ -102,6 +102,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     settingsVisible: needsSetup,
     isInteractive: needsSetup,
   },
+  /** Bumped when switching to Auto to trigger a fresh weather fetch. */
+  _weatherRefetchKey: 0,
 
   // --- actions ---
   setConfig: (partial) => {
@@ -115,16 +117,19 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         // Manual override → set condition directly
         set({ environment: { ...get().environment, condition: next.weatherOverride } });
       } else {
-        // Switched back to Auto → restore from cached live weather
+        // Switched back to Auto → restore cached live observation + bump
+        // the refetch key so useWeather triggers a fresh API call.
         try {
           const cached = localStorage.getItem(LS_KEYS.LAST_WEATHER);
           if (cached) {
             const lastEnv: EnvironmentState = JSON.parse(cached);
-            set({ environment: { ...get().environment, condition: lastEnv.condition } });
+            set({ environment: { ...get().environment, ...lastEnv } });
           }
         } catch {
-          // non-fatal, next weather poll will fix it
+          // non-fatal
         }
+        // Bump refetch key to force useWeather to re-fetch
+        set({ _weatherRefetchKey: get()._weatherRefetchKey + 1 });
       }
     }
   },

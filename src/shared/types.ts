@@ -28,6 +28,8 @@ export interface AppConfig {
   overlayOpacity: number;
   /** Manual weather override — null means use live data. */
   weatherOverride: WeatherCondition | null;
+  /** Temperature display unit. */
+  temperatureUnit: 'C' | 'F';
 }
 
 export interface EnvironmentState {
@@ -65,6 +67,8 @@ export interface AppState {
   environment: EnvironmentState;
   system: SystemState;
   ui: UIState;
+  /** Internal counter bumped when switching to Auto to trigger re-fetch. */
+  _weatherRefetchKey: number;
 }
 
 // ── IPC Payloads ───────────────────────────────────────

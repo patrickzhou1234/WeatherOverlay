@@ -1,34 +1,119 @@
 // ─────────────────────────────────────────────────────────
-// HUD.tsx — Glassmorphism overlay UI
-// Modern, clean settings panel + minimal status chips.
+// HUD.tsx — Material Design 3 overlay UI
+// Gradient accents, elevated surfaces, clean typography.
 // ─────────────────────────────────────────────────────────
 
 import React, { useState, useCallback, useEffect, FormEvent } from 'react';
 import { useStore } from '../store/useStore';
 import { IPC_CHANNELS } from '../../shared/types';
 
-// ── Shared style tokens ───────────────────────────────
+// ── Design tokens (Material Design 3 inspired) ───────
 
-const FONT = "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif";
-const GLASS = {
-  background: 'rgba(12, 12, 20, 0.72)',
-  backdropFilter: 'blur(20px) saturate(1.4)',
-  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-  border: '1px solid rgba(255,255,255,0.08)',
-} as React.CSSProperties;
+const FONT = "'Inter', 'Roboto', 'Segoe UI', system-ui, sans-serif";
 
-const ACCENT = '#6b8afd';
-const MUTED = 'rgba(255,255,255,0.45)';
+/** Primary gradient used on buttons, slider track, accents */
+const GRADIENT = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 
-/** Weather condition → emoji + label map */
-const CONDITION_LABELS: Record<string, string> = {
-  CLEAR: '☀ Clear',
-  CLOUDY: '☁ Cloudy',
-  RAIN: '🌧 Rain',
-  THUNDERSTORM: '⛈ Storm',
-  SNOW: '❄ Snow',
-  FOG: '🌫 Fog',
+/** Surface elevations — Material 3 tonal surfaces */
+const SURFACE = {
+  1: 'rgba(15, 15, 25, 0.78)',
+  2: 'rgba(22, 22, 38, 0.82)',
+  3: 'rgba(30, 30, 48, 0.85)',
+} as const;
+
+const BLUR = 'blur(24px) saturate(1.6)';
+
+/** Material 3 elevation shadows */
+const ELEVATION = {
+  1: '0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.24)',
+  2: '0 3px 6px rgba(0,0,0,0.32), 0 3px 6px rgba(0,0,0,0.23)',
+  3: '0 10px 20px rgba(0,0,0,0.35), 0 6px 6px rgba(0,0,0,0.23)',
+  4: '0 14px 28px rgba(0,0,0,0.4), 0 10px 10px rgba(0,0,0,0.22)',
+} as const;
+
+const ON_SURFACE = 'rgba(255,255,255,0.92)';
+const ON_SURFACE_MED = 'rgba(255,255,255,0.6)';
+const ON_SURFACE_LOW = 'rgba(255,255,255,0.38)';
+const OUTLINE = 'rgba(255,255,255,0.06)';
+
+/** Convert Celsius to Fahrenheit or display as-is, with unit symbol. */
+function displayTemp(tempC: number, unit: 'C' | 'F'): string {
+  if (unit === 'F') {
+    return `${Math.round(tempC * 9 / 5 + 32)}°F`;
+  }
+  return `${Math.round(tempC)}°C`;
+}
+
+/** Weather condition → Material icon + label + accent color */
+const WEATHER_INFO: Record<string, { icon: string; label: string; color: string }> = {
+  CLEAR:        { icon: 'wb_sunny',      label: 'Clear',        color: '#FFD54F' },
+  CLOUDY:       { icon: 'cloud',         label: 'Cloudy',       color: '#90A4AE' },
+  RAIN:         { icon: 'water_drop',    label: 'Rain',         color: '#4FC3F7' },
+  THUNDERSTORM: { icon: 'thunderstorm',  label: 'Thunderstorm', color: '#CE93D8' },
+  SNOW:         { icon: 'ac_unit',       label: 'Snow',         color: '#E0E0E0' },
+  FOG:          { icon: 'foggy',         label: 'Fog',          color: '#78909C' },
 };
+
+// ── Material Icon helper ─────────────────────────────
+
+const MIcon: React.FC<{
+  name: string;
+  size?: number;
+  color?: string;
+  filled?: boolean;
+  style?: React.CSSProperties;
+}> = ({ name, size = 20, color, filled = true, style }) => (
+  <span
+    className="material-symbols-rounded"
+    style={{
+      fontSize: size,
+      color,
+      fontVariationSettings: filled ? "'FILL' 1, 'wght' 400" : "'FILL' 0, 'wght' 400",
+      lineHeight: 1,
+      userSelect: 'none',
+      ...style,
+    }}
+  >
+    {name}
+  </span>
+);
+
+// ── Toggle Switch ────────────────────────────────────
+
+const ToggleSwitch: React.FC<{
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}> = ({ checked, onChange }) => (
+  <div
+    data-interactive="true"
+    onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
+    style={{
+      width: 44,
+      height: 24,
+      borderRadius: 12,
+      background: checked ? GRADIENT : 'rgba(255,255,255,0.12)',
+      padding: 2,
+      cursor: 'pointer',
+      transition: 'background 0.25s ease',
+      flexShrink: 0,
+      position: 'relative',
+    }}
+  >
+    <div
+      style={{
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        background: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+        transform: checked ? 'translateX(20px)' : 'translateX(0)',
+        transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+    />
+  </div>
+);
+
+// ── Main HUD Component ──────────────────────────────
 
 export const HUD: React.FC = () => {
   const config = useStore((s) => s.config);
@@ -42,7 +127,6 @@ export const HUD: React.FC = () => {
   const settingsOpen = ui.settingsVisible;
   const [localZip, setLocalZip] = useState(config.zipCode ?? '');
 
-  // ── Sync interactive state on mount ──
   useEffect(() => {
     if (useStore.getState().ui.settingsVisible) {
       window.electronAPI?.send(IPC_CHANNELS.SET_INTERACTIVE, true);
@@ -73,6 +157,7 @@ export const HUD: React.FC = () => {
   );
 
   const overlayAlpha = config.overlayOpacity ?? 1;
+  const weather = WEATHER_INFO[environment.condition] ?? WEATHER_INFO.CLEAR;
 
   return (
     <div
@@ -81,101 +166,138 @@ export const HUD: React.FC = () => {
         inset: 0,
         pointerEvents: 'none',
         fontFamily: FONT,
-        color: '#e8eaed',
+        color: ON_SURFACE,
         zIndex: 10,
       }}
     >
-      {/* ── Settings gear (bottom-right) ── */}
+      {/* ── FAB — Settings toggle (bottom-right) ── */}
       <button
         data-interactive="true"
         onClick={toggleSettings}
         title="Settings"
+        className="md-fab"
         style={{
           pointerEvents: 'auto',
           position: 'absolute',
-          bottom: 20,
-          right: 20,
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          border: '1px solid rgba(255,255,255,0.1)',
-          ...GLASS,
-          color: 'rgba(255,255,255,0.7)',
-          fontSize: 16,
+          bottom: 24,
+          right: 24,
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          border: 'none',
+          background: GRADIENT,
+          color: '#fff',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'all 0.2s ease',
+          boxShadow: ELEVATION[3],
+          transition: 'transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s ease',
         }}
       >
-        ⚙
+        <MIcon name={settingsOpen ? 'close' : 'settings'} size={22} />
       </button>
 
-      {/* ── Status chips (bottom-left) ── */}
+      {/* ── Status Card (bottom-left) ── */}
       <div
         style={{
           position: 'absolute',
-          bottom: 20,
-          left: 20,
-          display: 'flex',
-          gap: 6,
-          opacity: overlayAlpha * 0.85,
+          bottom: 24,
+          left: 24,
+          opacity: overlayAlpha,
           transition: 'opacity 0.3s ease',
         }}
       >
-        {/* Location chip */}
-        {environment.cityName && (
-          <div style={chipStyle}>
-            📍 {environment.cityName}
-          </div>
-        )}
-
-        {/* Weather chip */}
-        <div style={chipStyle}>
-          {CONDITION_LABELS[environment.condition] ?? environment.condition}
-          {' · '}
-          {Math.round(environment.temperature)}°
-        </div>
-
-        {/* Wind chip */}
-        <div style={chipStyle}>
-          💨 {environment.windSpeed.toFixed(1)} m/s
-        </div>
-
-        {/* System chip */}
-        <div style={chipStyle}>
-          CPU {system.cpuLoad}%
-          {' · '}
-          MEM {system.memoryUsage}%
-        </div>
-
-        {system.isBatteryLow && (
-          <div style={{ ...chipStyle, borderColor: 'rgba(255,100,100,0.3)', color: '#ff8a8a' }}>
-            🔋 Low
-          </div>
-        )}
-      </div>
-
-      {/* ── Error banner ── */}
-      {ui.isError && ui.errorMessage && (
         <div
+          className="md-status-card"
           style={{
-            position: 'absolute',
-            top: 20,
-            left: 20,
-            right: 20,
-            padding: '10px 14px',
-            ...GLASS,
-            background: 'rgba(200,40,40,0.65)',
-            borderRadius: 10,
-            borderColor: 'rgba(255,100,100,0.2)',
-            fontSize: 12,
-            fontWeight: 500,
-            letterSpacing: 0.2,
+            background: SURFACE[2],
+            backdropFilter: BLUR,
+            WebkitBackdropFilter: BLUR,
+            borderRadius: 16,
+            boxShadow: ELEVATION[2],
+            border: `1px solid ${OUTLINE}`,
+            overflow: 'hidden',
           }}
         >
-          ⚠ {ui.errorMessage}
+          {/* Gradient top accent strip */}
+          <div style={{ height: 2, background: GRADIENT }} />
+
+          <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* City + condition row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 11,
+                  background: `linear-gradient(135deg, ${weather.color}28 0%, ${weather.color}0a 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  border: `1px solid ${weather.color}18`,
+                }}
+              >
+                <MIcon name={weather.icon} size={20} color={weather.color} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {environment.cityName && (
+                  <span style={{ fontSize: 14, fontWeight: 600, color: ON_SURFACE, letterSpacing: -0.1 }}>
+                    {environment.cityName}
+                  </span>
+                )}
+                <span style={{ fontSize: 11, fontWeight: 500, color: ON_SURFACE_MED, letterSpacing: 0.2 }}>
+                  {weather.label} · {displayTemp(environment.temperature, config.temperatureUnit)}
+                </span>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: OUTLINE }} />
+
+            {/* System stats row */}
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+              <StatPill icon="memory" label="CPU" value={`${system.cpuLoad}%`} />
+              <StatPill icon="storage" label="MEM" value={`${system.memoryUsage}%`} />
+              <StatPill icon="air" label="Wind" value={`${environment.windSpeed.toFixed(1)}`} />
+              {system.isBatteryLow && (
+                <span style={{ fontSize: 11, color: '#ef5350', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <MIcon name="battery_alert" size={14} color="#ef5350" />
+                  Low
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Error snackbar ── */}
+      {ui.isError && ui.errorMessage && (
+        <div
+          className="md-snackbar"
+          style={{
+            position: 'absolute',
+            top: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 20px',
+            background: SURFACE[3],
+            backdropFilter: BLUR,
+            WebkitBackdropFilter: BLUR,
+            borderRadius: 12,
+            boxShadow: ELEVATION[3],
+            border: '1px solid rgba(239,83,80,0.2)',
+            fontSize: 13,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            maxWidth: 480,
+          }}
+        >
+          <MIcon name="error" size={18} color="#ef5350" />
+          <span style={{ color: 'rgba(255,255,255,0.85)' }}>{ui.errorMessage}</span>
         </div>
       )}
 
@@ -184,129 +306,156 @@ export const HUD: React.FC = () => {
         <form
           onSubmit={handleSave}
           data-interactive="true"
+          className="md-settings"
           style={{
             pointerEvents: 'auto',
             position: 'absolute',
-            bottom: 64,
-            right: 20,
-            width: 300,
-            padding: 20,
-            ...GLASS,
-            borderRadius: 14,
+            bottom: 84,
+            right: 24,
+            width: 320,
+            background: SURFACE[2],
+            backdropFilter: BLUR,
+            WebkitBackdropFilter: BLUR,
+            borderRadius: 20,
+            boxShadow: ELEVATION[4],
+            border: `1px solid ${OUTLINE}`,
             display: 'flex',
             flexDirection: 'column',
-            gap: 14,
+            overflow: 'hidden',
           }}
         >
-          {/* Title */}
-          <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.5, color: 'rgba(255,255,255,0.9)' }}>
-            Settings
-          </div>
+          {/* Gradient accent bar at top */}
+          <div style={{ height: 3, background: GRADIENT }} />
 
-          {/* Divider */}
-          <div style={dividerStyle} />
-
-          {/* ZIP Code */}
-          <div style={fieldWrap}>
-            <span style={labelStyle}>Location (US ZIP)</span>
-            <input
-              data-interactive="true"
-              type="text"
-              value={localZip}
-              onChange={(e) => setLocalZip(e.target.value)}
-              placeholder="e.g. 90210"
-              style={inputStyle}
-            />
-          </div>
-
-          {/* Weather override */}
-          <div style={fieldWrap}>
-            <span style={labelStyle}>Weather</span>
-            <select
-              data-interactive="true"
-              value={config.weatherOverride ?? ''}
-              onChange={(e) =>
-                setConfig({
-                  weatherOverride: e.target.value === '' ? null : (e.target.value as any),
-                })
-              }
-              style={inputStyle}
-            >
-              <option value="">Auto (live)</option>
-              <option value="CLEAR">☀ Clear</option>
-              <option value="CLOUDY">☁ Cloudy</option>
-              <option value="RAIN">🌧 Rain</option>
-              <option value="THUNDERSTORM">⛈ Thunderstorm</option>
-              <option value="SNOW">❄ Snow</option>
-              <option value="FOG">🌫 Fog</option>
-            </select>
-          </div>
-
-          {/* Opacity slider */}
-          <div style={fieldWrap}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={labelStyle}>Opacity</span>
-              <span style={{ ...labelStyle, fontVariantNumeric: 'tabular-nums' }}>
-                {Math.round((config.overlayOpacity ?? 1) * 100)}%
+          {/* Header */}
+          <div style={{ padding: '18px 20px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <MIcon name="tune" size={20} color="#667eea" />
+              <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: -0.2, color: ON_SURFACE }}>
+                Settings
               </span>
             </div>
-            <input
-              data-interactive="true"
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={config.overlayOpacity ?? 1}
-              onChange={(e) =>
-                setConfig({ overlayOpacity: parseFloat(e.target.value) })
-              }
-              style={sliderStyle}
-            />
+            <span style={{ fontSize: 11, color: ON_SURFACE_LOW, letterSpacing: 0.2 }}>
+              Customize your weather overlay
+            </span>
           </div>
 
-          <div style={dividerStyle} />
+          {/* Body */}
+          <div style={{ padding: '14px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Toggles */}
-          <label style={toggleRowStyle}>
-            <input
-              data-interactive="true"
-              type="checkbox"
-              checked={config.highPerformanceMode}
-              onChange={(e) => setConfig({ highPerformanceMode: e.target.checked })}
-              style={checkboxStyle}
-            />
-            <span>High quality particles</span>
-          </label>
+            {/* ── Location ── */}
+            <FieldGroup label="Location" icon="location_on">
+              <input
+                data-interactive="true"
+                type="text"
+                value={localZip}
+                onChange={(e) => setLocalZip(e.target.value)}
+                placeholder="US ZIP code"
+                className="md-input"
+                style={inputStyle}
+              />
+            </FieldGroup>
 
-          <label style={toggleRowStyle}>
-            <input
-              data-interactive="true"
-              type="checkbox"
-              checked={config.opaqueBackground}
-              onChange={(e) => {
-                setConfig({ opaqueBackground: e.target.checked });
-                window.electronAPI?.send(IPC_CHANNELS.SET_OPAQUE, e.target.checked);
-              }}
-              style={checkboxStyle}
-            />
-            <span>Opaque background</span>
-          </label>
+            {/* ── Weather override ── */}
+            <FieldGroup label="Weather" icon="cloud">
+              <select
+                data-interactive="true"
+                value={config.weatherOverride ?? ''}
+                onChange={(e) =>
+                  setConfig({
+                    weatherOverride: e.target.value === '' ? null : (e.target.value as any),
+                  })
+                }
+                className="md-select"
+                style={inputStyle}
+              >
+                <option value="">Auto (live)</option>
+                <option value="CLEAR">☀ Clear</option>
+                <option value="CLOUDY">☁ Cloudy</option>
+                <option value="RAIN">🌧 Rain</option>
+                <option value="THUNDERSTORM">⛈ Thunderstorm</option>
+                <option value="SNOW">❄ Snow</option>
+                <option value="FOG">🌫 Fog</option>
+              </select>
+            </FieldGroup>
 
-          <div style={dividerStyle} />
+            {/* ── Opacity ── */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MIcon name="opacity" size={15} color={ON_SURFACE_MED} />
+                  <span style={labelTextStyle}>Opacity</span>
+                </div>
+                <span className="md-badge">
+                  {Math.round((config.overlayOpacity ?? 1) * 100)}%
+                </span>
+              </div>
+              <input
+                data-interactive="true"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={config.overlayOpacity ?? 1}
+                onChange={(e) =>
+                  setConfig({ overlayOpacity: parseFloat(e.target.value) })
+                }
+                className="md-slider"
+                style={{ width: '100%', cursor: 'pointer' }}
+              />
+            </div>
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button data-interactive="true" type="submit" style={primaryBtnStyle}>
-              Save
-            </button>
-            <button
-              data-interactive="true"
-              type="button"
-              onClick={toggleSettings}
-              style={ghostBtnStyle}
-            >
-              Cancel
-            </button>
+            {/* Divider */}
+            <div style={{ height: 1, background: OUTLINE }} />
+
+            {/* ── Toggles ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <ToggleRow
+                icon="thermostat"
+                label="Fahrenheit"
+                checked={config.temperatureUnit === 'F'}
+                onChange={(v) => setConfig({ temperatureUnit: v ? 'F' : 'C' })}
+              />
+              <ToggleRow
+                icon="auto_awesome"
+                label="High quality particles"
+                checked={config.highPerformanceMode}
+                onChange={(v) => setConfig({ highPerformanceMode: v })}
+              />
+              <ToggleRow
+                icon="format_paint"
+                label="Opaque background"
+                checked={config.opaqueBackground}
+                onChange={(v) => {
+                  setConfig({ opaqueBackground: v });
+                  window.electronAPI?.send(IPC_CHANNELS.SET_OPAQUE, v);
+                }}
+              />
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: OUTLINE }} />
+
+            {/* ── Action buttons ── */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                data-interactive="true"
+                type="submit"
+                className="md-btn-primary"
+                style={primaryBtnStyle}
+              >
+                Save
+              </button>
+              <button
+                data-interactive="true"
+                type="button"
+                onClick={toggleSettings}
+                className="md-btn-ghost"
+                style={ghostBtnStyle}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </form>
       )}
@@ -314,107 +463,107 @@ export const HUD: React.FC = () => {
   );
 };
 
+// ── Sub-components ────────────────────────────────────
+
+/** Tiny stat readout used in the status card */
+const StatPill: React.FC<{ icon: string; label: string; value: string }> = ({ icon, label, value }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+    <MIcon name={icon} size={13} color={ON_SURFACE_LOW} filled={false} />
+    <span style={{ fontSize: 11, color: ON_SURFACE_LOW, fontWeight: 500 }}>{label}</span>
+    <span style={{ fontSize: 11, color: ON_SURFACE_MED, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+  </div>
+);
+
+/** Field label + icon row wrapping an input/select */
+const FieldGroup: React.FC<{
+  label: string;
+  icon: string;
+  children: React.ReactNode;
+}> = ({ label, icon, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <MIcon name={icon} size={15} color={ON_SURFACE_MED} />
+      <span style={labelTextStyle}>{label}</span>
+    </div>
+    {children}
+  </div>
+);
+
+/** Toggle with icon, label, and Material switch */
+const ToggleRow: React.FC<{
+  icon: string;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}> = ({ icon, label, checked, onChange }) => (
+  <div
+    data-interactive="true"
+    onClick={() => onChange(!checked)}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      cursor: 'pointer',
+    }}
+  >
+    <MIcon name={icon} size={17} color={checked ? '#667eea' : ON_SURFACE_LOW} filled={checked} />
+    <span style={{ fontSize: 13, fontWeight: 400, color: ON_SURFACE_MED, flex: 1 }}>{label}</span>
+    <ToggleSwitch checked={checked} onChange={onChange} />
+  </div>
+);
+
 // ── Style constants ───────────────────────────────────
 
-const chipStyle: React.CSSProperties = {
-  padding: '4px 10px',
-  borderRadius: 8,
-  background: 'rgba(12, 12, 20, 0.55)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255,255,255,0.06)',
+const labelTextStyle: React.CSSProperties = {
   fontSize: 11,
-  fontWeight: 500,
-  letterSpacing: 0.3,
-  color: 'rgba(255,255,255,0.7)',
-  whiteSpace: 'nowrap',
-};
-
-const dividerStyle: React.CSSProperties = {
-  height: 1,
-  background: 'rgba(255,255,255,0.06)',
-  margin: '0 -4px',
-};
-
-const fieldWrap: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 6,
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 500,
-  color: MUTED,
-  letterSpacing: 0.4,
+  fontWeight: 600,
+  color: ON_SURFACE_MED,
+  letterSpacing: 0.6,
   textTransform: 'uppercase',
 };
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '8px 10px',
-  borderRadius: 8,
+  padding: '10px 12px',
+  borderRadius: 10,
   border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(255,255,255,0.04)',
-  color: '#e8eaed',
+  background: 'rgba(255,255,255,0.05)',
+  color: ON_SURFACE,
   fontFamily: FONT,
   fontSize: 13,
   fontWeight: 400,
   outline: 'none',
   boxSizing: 'border-box',
-  transition: 'border-color 0.2s ease',
-};
-
-const sliderStyle: React.CSSProperties = {
-  width: '100%',
-  height: 4,
-  accentColor: ACCENT,
-  cursor: 'pointer',
-};
-
-const toggleRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  fontSize: 12,
-  fontWeight: 400,
-  color: 'rgba(255,255,255,0.75)',
-  cursor: 'pointer',
-};
-
-const checkboxStyle: React.CSSProperties = {
-  accentColor: ACCENT,
-  width: 14,
-  height: 14,
-  cursor: 'pointer',
+  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
 };
 
 const primaryBtnStyle: React.CSSProperties = {
   flex: 1,
-  padding: '8px 0',
-  borderRadius: 8,
+  padding: '10px 0',
+  borderRadius: 12,
   border: 'none',
-  background: ACCENT,
+  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   color: '#fff',
-  fontFamily: FONT,
-  fontSize: 12,
+  fontFamily: "'Inter', 'Roboto', 'Segoe UI', system-ui, sans-serif",
+  fontSize: 13,
   fontWeight: 600,
   letterSpacing: 0.3,
   cursor: 'pointer',
-  transition: 'opacity 0.15s ease',
+  boxShadow: '0 2px 8px rgba(102,126,234,0.35)',
+  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
 };
 
 const ghostBtnStyle: React.CSSProperties = {
   flex: 1,
-  padding: '8px 0',
-  borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.08)',
+  padding: '10px 0',
+  borderRadius: 12,
+  border: '1px solid rgba(255,255,255,0.06)',
   background: 'rgba(255,255,255,0.04)',
   color: 'rgba(255,255,255,0.6)',
-  fontFamily: FONT,
-  fontSize: 12,
+  fontFamily: "'Inter', 'Roboto', 'Segoe UI', system-ui, sans-serif",
+  fontSize: 13,
   fontWeight: 500,
   letterSpacing: 0.3,
   cursor: 'pointer',
-  transition: 'opacity 0.15s ease',
+  transition: 'background 0.15s ease, color 0.15s ease',
 };

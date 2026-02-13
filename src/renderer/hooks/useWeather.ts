@@ -76,9 +76,14 @@ async function fetchObservation(stationUrl: string): Promise<NWSObservation> {
   const p = data?.properties;
   if (!p) throw new Error('Malformed NWS observation response.');
 
-  const tempC = p.temperature?.value ?? 20;
-  const windMs = (p.windSpeed?.value ?? 0) / 3.6; // NWS gives km/h → m/s
-  const humidity = p.relativeHumidity?.value ?? 50;
+  // NWS returns temperature in Celsius; value can be null for missing data
+  const rawTemp = p.temperature?.value;
+  const tempC = typeof rawTemp === 'number' ? rawTemp : 20;
+  // NWS windSpeed is in km/h → convert to m/s
+  const rawWind = p.windSpeed?.value;
+  const windMs = typeof rawWind === 'number' ? rawWind / 3.6 : 0;
+  const rawHumidity = p.relativeHumidity?.value;
+  const humidity = typeof rawHumidity === 'number' ? rawHumidity : 50;
   const desc: string = p.textDescription ?? '';
 
   return {
@@ -105,9 +110,10 @@ let cachedStationUrl: string | null = null;
  * immediately.
  */
 export function useWeather(): void {
-  const { zipCode, refreshInterval } = useStore((s) => s.config);
+  const { zipCode, refreshInterval, weatherOverride } = useStore((s) => s.config);
   const syncEnvironment = useStore((s) => s.syncEnvironment);
   const setError = useStore((s) => s.setError);
+  const refetchKey = useStore((s) => s._weatherRefetchKey);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -152,7 +158,7 @@ export function useWeather(): void {
     }
   }, []);
 
-  // Poll loop
+  // Poll loop — also re-runs when refetchKey bumps (Auto switch)
   useEffect(() => {
     if (!zipCode) return;
 
@@ -165,5 +171,5 @@ export function useWeather(): void {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [zipCode, refreshInterval, fetchWeather]);
+  }, [zipCode, refreshInterval, fetchWeather, refetchKey]);
 }

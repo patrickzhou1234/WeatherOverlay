@@ -9,6 +9,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   opaqueBackground: false,
   overlayOpacity: 1,
   weatherOverride: null,
+  temperatureUnit: 'F',
 };
 
 export const DEFAULT_ENVIRONMENT: EnvironmentState = {
