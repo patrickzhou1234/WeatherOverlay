@@ -67,31 +67,54 @@ function mapNwsDescription(desc: string): WeatherCondition {
   return 'CLEAR';
 }
 
-/** Fetch the latest observation from a station and normalise. */
+/**
+ * Fetch recent observations from a station and pick the first
+ * non-null value for each field. The `/observations/latest`
+ * endpoint often has null sensor readings; querying the last
+ * 10 observations gives us a much better chance of getting
+ * actual data.
+ */
 async function fetchObservation(stationUrl: string): Promise<NWSObservation> {
-  const url = `${stationUrl}/observations/latest`;
+  const url = `${stationUrl}/observations?limit=10`;
   const res = await fetch(url, { headers: HEADERS });
   if (!res.ok) throw new Error(`NWS observation ${res.status}: ${res.statusText}`);
   const data = await res.json();
-  const p = data?.properties;
-  if (!p) throw new Error('Malformed NWS observation response.');
+  const features: any[] = data?.features;
+  if (!features?.length) throw new Error('No observations available for your station.');
 
-  // NWS returns temperature in Celsius; value can be null for missing data
-  const rawTemp = p.temperature?.value;
-  const tempC = typeof rawTemp === 'number' ? rawTemp : 20;
-  // NWS windSpeed is in km/h → convert to m/s
-  const rawWind = p.windSpeed?.value;
-  const windMs = typeof rawWind === 'number' ? rawWind / 3.6 : 0;
-  const rawHumidity = p.relativeHumidity?.value;
-  const humidity = typeof rawHumidity === 'number' ? rawHumidity : 50;
-  const desc: string = p.textDescription ?? '';
+  // Walk through recent observations, pick the first valid value for each field
+  let bestTemp: number | null = null;
+  let bestWind: number | null = null;
+  let bestHumidity: number | null = null;
+  let bestDesc = '';
+  let bestTimestamp = '';
+
+  for (const feature of features) {
+    const p = feature?.properties;
+    if (!p) continue;
+
+    const rawTemp = p.temperature?.value;
+    if (typeof rawTemp === 'number' && bestTemp === null) bestTemp = rawTemp;
+
+    const rawWind = p.windSpeed?.value;
+    if (typeof rawWind === 'number' && bestWind === null) bestWind = rawWind;
+
+    const rawHumidity = p.relativeHumidity?.value;
+    if (typeof rawHumidity === 'number' && bestHumidity === null) bestHumidity = rawHumidity;
+
+    if (!bestDesc && p.textDescription) bestDesc = p.textDescription;
+    if (!bestTimestamp && p.timestamp) bestTimestamp = p.timestamp;
+
+    // Found everything we need — stop early
+    if (bestTemp !== null && bestWind !== null && bestHumidity !== null && bestDesc) break;
+  }
 
   return {
-    condition: mapNwsDescription(desc),
-    temperature: tempC,
-    windSpeed: windMs,
-    humidity,
-    timestamp: p.timestamp ?? new Date().toISOString(),
+    condition: mapNwsDescription(bestDesc),
+    temperature: bestTemp ?? 20,
+    windSpeed: bestWind !== null ? bestWind / 3.6 : 0,
+    humidity: bestHumidity ?? 50,
+    timestamp: bestTimestamp || new Date().toISOString(),
   };
 }
 

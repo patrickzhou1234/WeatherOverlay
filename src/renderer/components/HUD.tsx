@@ -89,6 +89,13 @@ export const HUD: React.FC = () => {
   const settingsOpen = ui.settingsVisible;
   const [localZip, setLocalZip] = useState(config.zipCode ?? '');
 
+  // Sync local ZIP when settings panel opens (in case config changed externally)
+  useEffect(() => {
+    if (settingsOpen) {
+      setLocalZip(config.zipCode ?? '');
+    }
+  }, [settingsOpen]);
+
   useEffect(() => {
     if (useStore.getState().ui.settingsVisible) {
       window.electronAPI?.send(IPC_CHANNELS.SET_INTERACTIVE, true);
@@ -112,10 +119,14 @@ export const HUD: React.FC = () => {
         return;
       }
       setConfig({ zipCode: localZip.trim() });
+      // Always force a fresh weather fetch from the API on Save
+      if (!config.weatherOverride) {
+        useStore.setState((s) => ({ _weatherRefetchKey: s._weatherRefetchKey + 1 }));
+      }
       setError(null);
       toggleSettings();
     },
-    [localZip, setConfig, setError, toggleSettings],
+    [localZip, config.weatherOverride, setConfig, setError, toggleSettings],
   );
 
   const overlayAlpha = config.overlayOpacity ?? 1;
@@ -293,13 +304,15 @@ export const HUD: React.FC = () => {
                 <Select
                   data-interactive="true"
                   label="Weather"
-                  value={(config.weatherOverride as string) ?? ''}
+                  value={(config.weatherOverride as string) ?? 'AUTO'}
                   onChange={(e) =>
-                    setConfig({ weatherOverride: e.target.value === '' ? null : (e.target.value as any) })
+                    setConfig({
+                      weatherOverride: e.target.value === 'AUTO' ? null : (e.target.value as any),
+                    })
                   }
                   startAdornment={<CloudIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />}
                 >
-                  <MenuItem value="">Auto (live)</MenuItem>
+                  <MenuItem value="AUTO">Auto (live)</MenuItem>
                   <MenuItem value="CLEAR">☀ Clear</MenuItem>
                   <MenuItem value="CLOUDY">☁ Cloudy</MenuItem>
                   <MenuItem value="RAIN">🌧 Rain</MenuItem>
