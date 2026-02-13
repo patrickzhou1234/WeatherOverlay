@@ -10,7 +10,6 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Rain } from './effects/Rain';
 import { Snow } from './effects/Snow';
 import { Clouds } from './effects/Clouds';
-import { SkyGradient } from './effects/SkyGradient';
 import { useStore } from '../store/useStore';
 import { TARGET_FPS } from '../../shared/constants';
 
@@ -46,9 +45,6 @@ const WeatherEffects: React.FC = () => {
 
 export const Scene: React.FC = () => {
   const overlayOpacity = useStore((s) => s.config.overlayOpacity);
-  const condition = useStore((s) => s.environment.condition);
-
-  const isClear = condition === 'CLEAR';
 
   return (
     <Canvas
@@ -63,7 +59,6 @@ export const Scene: React.FC = () => {
       frameloop="always"
     >
       <FrameLimiter />
-      {!isClear && <SkyGradient />}
       <WeatherEffects />
     </Canvas>
   );
