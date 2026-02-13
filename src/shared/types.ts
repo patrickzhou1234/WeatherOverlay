@@ -1,0 +1,114 @@
+// ─────────────────────────────────────────────────────────
+// Shared Type Definitions — Single source of truth
+// ─────────────────────────────────────────────────────────
+
+/** Weather condition buckets (decoupled from any specific API provider). */
+export type WeatherCondition =
+  | 'CLEAR'
+  | 'RAIN'
+  | 'SNOW'
+  | 'THUNDERSTORM'
+  | 'CLOUDY'
+  | 'FOG';
+
+/** Simplified time-of-day bands. */
+export type TimeOfDay = 'DAWN' | 'DAY' | 'DUSK' | 'NIGHT';
+
+// ── Application Store ──────────────────────────────────
+
+export interface AppConfig {
+  zipCode: string | null;
+  /** Weather refresh interval in ms (min 600 000 = 10 min). */
+  refreshInterval: number;
+  /** When true, raises particle caps for richer visuals. */
+  highPerformanceMode: boolean;
+  /** When true the overlay has an opaque dark background instead of transparent. */
+  opaqueBackground: boolean;
+}
+
+export interface EnvironmentState {
+  condition: WeatherCondition;
+  timeOfDay: TimeOfDay;
+  /** Celsius */
+  temperature: number;
+  /** m/s */
+  windSpeed: number;
+  /** 0-100 */
+  humidity: number;
+}
+
+export interface SystemState {
+  /** 0-100 */
+  cpuLoad: number;
+  /** 0-100 */
+  memoryUsage: number;
+  isBatteryLow: boolean;
+}
+
+export interface UIState {
+  /** When true the window captures mouse events (e.g. Settings panel open). */
+  isInteractive: boolean;
+  /** When true the settings panel is visible and the window is interactive. */
+  settingsVisible: boolean;
+  isError: boolean;
+  errorMessage: string | null;
+}
+
+export interface AppState {
+  config: AppConfig;
+  environment: EnvironmentState;
+  system: SystemState;
+  ui: UIState;
+}
+
+// ── IPC Payloads ───────────────────────────────────────
+
+/** Channel: 'system:stats' — Main → Renderer */
+export interface SystemStatsPayload {
+  cpuLoad: number;
+  memFree: number;
+  batteryPercent?: number;
+}
+
+/** Channel: 'window:set-ignore-mouse' — Renderer → Main */
+export interface IgnoreMousePayload {
+  /** true = click-through, false = clickable */
+  ignore: boolean;
+  /** true = forward events to webview */
+  forward: boolean;
+}
+
+// ── IPC Channel names (kept in one place to avoid typos) ──
+
+export const IPC_CHANNELS = {
+  SYSTEM_STATS: 'system:stats',
+  SET_IGNORE_MOUSE: 'window:set-ignore-mouse',
+  GET_SYSTEM_STATS: 'system:get-stats',
+  SET_INTERACTIVE: 'ui:set-interactive',
+  SET_OPAQUE: 'ui:set-opaque',
+  OPEN_SETTINGS: 'tray:open-settings',
+  QUIT_APP: 'tray:quit',
+  RESET_VIEW: 'tray:reset-view',
+} as const;
+
+// ── NWS API helpers ────────────────────────────────────
+
+/** Shape of a Nominatim geocode result (only fields we use). */
+export interface NominatimResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
+
+/** Parsed weather observation from the NWS API. */
+export interface NWSObservation {
+  condition: WeatherCondition;
+  /** Celsius */
+  temperature: number;
+  /** m/s */
+  windSpeed: number;
+  /** 0-100 */
+  humidity: number;
+  /** ISO-8601 timestamp of the observation */
+  timestamp: string;
+}
