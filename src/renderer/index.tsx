@@ -4,6 +4,8 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { overlayTheme } from './theme';
 import { App } from './components/App';
 import './styles.css';
 
@@ -13,6 +15,9 @@ if (!container) throw new Error('#root element not found');
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider theme={overlayTheme}>
+      <CssBaseline enableColorScheme />
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 );

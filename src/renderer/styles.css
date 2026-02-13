@@ -1,11 +1,9 @@
 /* ─────────────────────────────────────────────────────────
-   Material Design 3 — Global Styles
-   Transparent body, gradient accents, clean interactions
+   Global Styles — Transparent overlay + MUI overrides
    ───────────────────────────────────────────────────────── */
 
-/* Google Fonts — Inter for text, Material Symbols for icons */
+/* Google Fonts — Inter for text */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 /* ── Reset ────────────────────────────────────────────── */
 
@@ -37,201 +35,18 @@ input, button, select, textarea, [data-interactive="true"] {
   display: none;
 }
 
-/* ── Material Input fields ────────────────────────────── */
+/* ── MUI overrides for transparent overlay context ────── */
 
-.md-input,
-.md-select {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+/* Ensure MUI popover menus (Select dropdowns) render with glass effect */
+.MuiPaper-root.MuiMenu-paper {
+  backdrop-filter: blur(24px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+  background: rgba(19, 19, 42, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 12px !important;
 }
 
-.md-input:hover,
-.md-select:hover {
-  border-color: rgba(255, 255, 255, 0.14) !important;
-  background: rgba(255, 255, 255, 0.07) !important;
-}
-
-.md-input:focus,
-.md-select:focus {
-  border-color: rgba(102, 126, 234, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
-  background: rgba(255, 255, 255, 0.06) !important;
-}
-
-.md-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
-}
-
-/* ── Material Select dropdown ─────────────────────────── */
-
-.md-select {
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.4)' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 10px center !important;
-  padding-right: 30px !important;
-  cursor: pointer;
-}
-
-.md-select option {
-  background: #1e1e30;
-  color: #e8eaed;
-  padding: 8px;
-}
-
-/* ── Material Slider — gradient track ─────────────────── */
-
-.md-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  outline: none;
-  position: relative;
-}
-
-.md-slider::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(102, 126, 234, 0.15) 0%,
-    rgba(102, 126, 234, 0.15) 100%
-  );
-}
-
-.md-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  cursor: pointer;
-  margin-top: -7px;
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.15s ease;
-}
-
-.md-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.55);
-}
-
-.md-slider::-webkit-slider-thumb:active {
-  transform: scale(1.25);
-}
-
-/* ── Material FAB (floating action button) ────────────── */
-
-.md-fab {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.2s ease !important;
-}
-
-.md-fab:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.35),
-              0 6px 8px rgba(0, 0, 0, 0.25) !important;
-  opacity: 1 !important;
-}
-
-.md-fab:active {
-  transform: scale(0.97);
-}
-
-/* ── Material Buttons ─────────────────────────────────── */
-
-.md-btn-primary {
-  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
-}
-
-.md-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.45) !important;
-  opacity: 1 !important;
-}
-
-.md-btn-primary:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.md-btn-ghost {
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
-}
-
-.md-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  opacity: 1 !important;
-}
-
-/* ── Material Badge (opacity percentage) ──────────────── */
-
-.md-badge {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(102, 126, 234, 0.15);
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.3px;
-}
-
-/* ── Material Status Card ─────────────────────────────── */
-
-.md-status-card {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.2s ease;
-}
-
-/* ── Material Settings Card ───────────────────────────── */
-
-.md-settings {
-  animation: md-slide-up 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes md-slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ── Material Snackbar ────────────────────────────────── */
-
-.md-snackbar {
-  animation: md-fade-in 0.3s ease;
-}
-
-@keyframes md-fade-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-/* ── Material Switch ──────────────────────────────────── */
-
-.md-switch {
-  transition: background 0.25s ease;
-}
-
-/* ── Prevent default button styles from leaking ───────── */
-
+/* Prevent default button styles from leaking */
 button {
   font-family: inherit;
 }
