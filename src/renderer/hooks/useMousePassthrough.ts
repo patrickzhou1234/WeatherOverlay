@@ -47,12 +47,24 @@ export function useMousePassthrough(): void {
       if (useStore.getState().ui.isInteractive) return;
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      const isInteractiveEl =
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLButtonElement ||
-        el instanceof HTMLSelectElement ||
-        el instanceof HTMLTextAreaElement ||
-        (el as HTMLElement)?.dataset?.interactive === 'true';
+
+      // Walk up the DOM tree — the actual interactive element may be a
+      // parent of the hit target (e.g. an icon <span> inside a <button>).
+      let node: HTMLElement | null = el as HTMLElement;
+      let isInteractiveEl = false;
+      while (node) {
+        if (
+          node instanceof HTMLInputElement ||
+          node instanceof HTMLButtonElement ||
+          node instanceof HTMLSelectElement ||
+          node instanceof HTMLTextAreaElement ||
+          node.dataset?.interactive === 'true'
+        ) {
+          isInteractiveEl = true;
+          break;
+        }
+        node = node.parentElement;
+      }
 
       if (isInteractiveEl && stateRef.current === 'PASS_THROUGH') {
         // Cancel any pending return-to-passthrough
