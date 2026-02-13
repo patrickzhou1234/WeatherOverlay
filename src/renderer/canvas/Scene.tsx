@@ -10,6 +10,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Rain } from './effects/Rain';
 import { Snow } from './effects/Snow';
 import { Clouds } from './effects/Clouds';
+import { Sunshine } from './effects/Sunshine';
 import { useStore } from '../store/useStore';
 import { TARGET_FPS } from '../../shared/constants';
 
@@ -32,10 +33,9 @@ const FrameLimiter: React.FC = () => {
 const WeatherEffects: React.FC = () => {
   const condition = useStore((s) => s.environment.condition);
 
-  if (condition === 'CLEAR') return null;
-
   return (
     <>
+      {condition === 'CLEAR' && <Sunshine />}
       {(condition === 'RAIN' || condition === 'THUNDERSTORM') && <Rain />}
       {condition === 'SNOW' && <Snow />}
       {(condition === 'CLOUDY' || condition === 'FOG') && <Clouds />}

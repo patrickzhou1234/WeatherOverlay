@@ -124,6 +124,13 @@ export const HUD: React.FC = () => {
           transition: 'opacity 0.3s ease',
         }}
       >
+        {/* Location chip */}
+        {environment.cityName && (
+          <div style={chipStyle}>
+            📍 {environment.cityName}
+          </div>
+        )}
+
         {/* Weather chip */}
         <div style={chipStyle}>
           {CONDITION_LABELS[environment.condition] ?? environment.condition}

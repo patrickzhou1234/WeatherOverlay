@@ -17,6 +17,7 @@ export const DEFAULT_ENVIRONMENT: EnvironmentState = {
   temperature: 20,
   windSpeed: 2,
   humidity: 50,
+  cityName: null,
 };
 
 export const DEFAULT_SYSTEM: SystemState = {

@@ -20,14 +20,21 @@ import {
 
 const HEADERS = { 'User-Agent': 'CozyOverlay/1.0 (weather-overlay-app)' };
 
-/** Geocode a US ZIP/postal code to lat/lon via Nominatim. */
-async function geocodeZip(zip: string): Promise<{ lat: number; lon: number }> {
-  const url = `${NOMINATIM_URL}?postalcode=${encodeURIComponent(zip)}&country=US&format=json&limit=1`;
+/** Geocode a US ZIP/postal code to lat/lon + city name via Nominatim. */
+async function geocodeZip(zip: string): Promise<{ lat: number; lon: number; city: string | null }> {
+  const url = `${NOMINATIM_URL}?postalcode=${encodeURIComponent(zip)}&country=US&format=json&limit=1&addressdetails=1`;
   const res = await fetch(url, { headers: HEADERS });
   if (!res.ok) throw new Error(`Nominatim ${res.status}: ${res.statusText}`);
-  const data: NominatimResult[] = await res.json();
+  const data = await res.json();
   if (!data.length) throw new Error(`No results for ZIP "${zip}". Is it a valid US ZIP code?`);
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+
+  const item = data[0];
+  const addr = item.address ?? {};
+  // Nominatim uses city, town, or village depending on settlement size
+  const city: string | null =
+    addr.city ?? addr.town ?? addr.village ?? addr.hamlet ?? null;
+
+  return { lat: parseFloat(item.lat), lon: parseFloat(item.lon), city };
 }
 
 /** Get the nearest observation station URL from an NWS grid point. */
@@ -110,9 +117,16 @@ export function useWeather(): void {
     try {
       // Resolve station (cached per ZIP)
       if (cachedZip !== zipCode || !cachedStationUrl) {
-        const { lat, lon } = await geocodeZip(zipCode);
+        const { lat, lon, city } = await geocodeZip(zipCode);
         cachedStationUrl = await getStationUrl(lat, lon);
         cachedZip = zipCode;
+
+        // Store resolved city name
+        if (city) {
+          useStore.setState((s) => ({
+            environment: { ...s.environment, cityName: city },
+          }));
+        }
       }
 
       const obs = await fetchObservation(cachedStationUrl!);

@@ -111,8 +111,21 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
 
     // If weatherOverride changed, apply it to environment immediately
     if ('weatherOverride' in partial) {
-      const condition = next.weatherOverride ?? get().environment.condition;
-      set({ environment: { ...get().environment, condition } });
+      if (next.weatherOverride) {
+        // Manual override → set condition directly
+        set({ environment: { ...get().environment, condition: next.weatherOverride } });
+      } else {
+        // Switched back to Auto → restore from cached live weather
+        try {
+          const cached = localStorage.getItem(LS_KEYS.LAST_WEATHER);
+          if (cached) {
+            const lastEnv: EnvironmentState = JSON.parse(cached);
+            set({ environment: { ...get().environment, condition: lastEnv.condition } });
+          }
+        } catch {
+          // non-fatal, next weather poll will fix it
+        }
+      }
     }
   },
 
@@ -127,6 +140,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       temperature: obs.temperature,
       windSpeed: obs.windSpeed * chaos,
       humidity: obs.humidity,
+      cityName: get().environment.cityName,
     };
 
     // §5-4 Cache last known weather for offline restarts

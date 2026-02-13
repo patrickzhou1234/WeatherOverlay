@@ -39,6 +39,8 @@ export interface EnvironmentState {
   windSpeed: number;
   /** 0-100 */
   humidity: number;
+  /** Resolved city/town name from geocoding (null until first successful lookup). */
+  cityName: string | null;
 }
 
 export interface SystemState {
