@@ -11,6 +11,11 @@ import { Rain } from './effects/Rain';
 import { Snow } from './effects/Snow';
 import { Clouds } from './effects/Clouds';
 import { Sunshine } from './effects/Sunshine';
+import { SakuraPetals } from './effects/SakuraPetals';
+import { HydroBlast } from './effects/HydroBlast';
+import { TechnoTunnel } from './effects/TechnoTunnel';
+import { Fireflies } from './effects/Fireflies';
+import { Aurora } from './effects/Aurora';
 import { useStore } from '../store/useStore';
 import { TARGET_FPS } from '../../shared/constants';
 
@@ -43,6 +48,23 @@ const WeatherEffects: React.FC = () => {
   );
 };
 
+/** Renders the selected custom visual effect (layered alongside weather). */
+const CustomEffects: React.FC = () => {
+  const customEffect = useStore((s) => s.config.customEffect);
+
+  if (!customEffect) return null;
+
+  return (
+    <>
+      {customEffect === 'SAKURA' && <SakuraPetals />}
+      {customEffect === 'HYDRO_BLAST' && <HydroBlast />}
+      {customEffect === 'TECHNO_TUNNEL' && <TechnoTunnel />}
+      {customEffect === 'FIREFLIES' && <Fireflies />}
+      {customEffect === 'AURORA' && <Aurora />}
+    </>
+  );
+};
+
 export const Scene: React.FC = () => {
   const overlayOpacity = useStore((s) => s.config.overlayOpacity);
 
@@ -60,6 +82,7 @@ export const Scene: React.FC = () => {
     >
       <FrameLimiter />
       <WeatherEffects />
+      <CustomEffects />
     </Canvas>
   );
 };

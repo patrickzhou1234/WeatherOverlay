@@ -379,6 +379,28 @@ export const HUD: React.FC = () => {
               </select>
             </FieldGroup>
 
+            {/* ── Custom visual effect ── */}
+            <FieldGroup label="Custom Effect" icon="auto_fix_high">
+              <select
+                data-interactive="true"
+                value={config.customEffect ?? ''}
+                onChange={(e) =>
+                  setConfig({
+                    customEffect: e.target.value === '' ? null : (e.target.value as any),
+                  })
+                }
+                className="md-select"
+                style={inputStyle}
+              >
+                <option value="">None</option>
+                <option value="SAKURA">🌸 Sakura Petals</option>
+                <option value="HYDRO_BLAST">💦 Hydro Blast</option>
+                <option value="TECHNO_TUNNEL">🔮 Techno Tunnel</option>
+                <option value="FIREFLIES">✨ Fireflies</option>
+                <option value="AURORA">🌌 Aurora Borealis</option>
+              </select>
+            </FieldGroup>
+
             {/* ── Opacity ── */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>

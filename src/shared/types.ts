@@ -14,6 +14,14 @@ export type WeatherCondition =
 /** Simplified time-of-day bands. */
 export type TimeOfDay = 'DAWN' | 'DAY' | 'DUSK' | 'NIGHT';
 
+/** Custom visual effect modes (layered on top of weather). */
+export type CustomEffect =
+  | 'SAKURA'
+  | 'HYDRO_BLAST'
+  | 'TECHNO_TUNNEL'
+  | 'FIREFLIES'
+  | 'AURORA';
+
 // ── Application Store ──────────────────────────────────
 
 export interface AppConfig {
@@ -30,6 +38,8 @@ export interface AppConfig {
   weatherOverride: WeatherCondition | null;
   /** Temperature display unit. */
   temperatureUnit: 'C' | 'F';
+  /** Custom visual effect layered alongside weather — null means none. */
+  customEffect: CustomEffect | null;
 }
 
 export interface EnvironmentState {
