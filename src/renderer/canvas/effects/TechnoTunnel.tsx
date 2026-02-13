@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────
-// TechnoTunnel.tsx — Neon wireframe tunnel with pulsing
-// rings that fly toward the camera. Creates a retro/cyber
-// warp-speed aesthetic layered over the desktop.
+// TechnoTunnel.tsx — Gentle wireframe tunnel with soft
+// glowing rings that drift toward the camera. A calm,
+// ambient warp aesthetic — more lo-fi than rave.
 // ─────────────────────────────────────────────────────────
 
 import React, { useRef, useMemo } from 'react';
@@ -10,17 +10,16 @@ import * as THREE from 'three';
 import { useStore } from '../../store/useStore';
 import { TARGET_FPS } from '../../../shared/constants';
 
-const RING_COUNT = 28;
-const TUNNEL_DEPTH = 30;
+const RING_COUNT = 16;
+const TUNNEL_DEPTH = 40;
 
-/** Neon color palette — cycles through these. */
-const NEON_COLORS = [
-  new THREE.Color('#00ffff'), // cyan
-  new THREE.Color('#ff00ff'), // magenta
-  new THREE.Color('#00ff88'), // mint
-  new THREE.Color('#ff3366'), // hot pink
-  new THREE.Color('#6644ff'), // purple
-  new THREE.Color('#ffaa00'), // amber
+/** Soft, muted palette. */
+const COLORS = [
+  new THREE.Color('#4488aa'), // teal
+  new THREE.Color('#6677aa'), // slate blue
+  new THREE.Color('#558899'), // steel
+  new THREE.Color('#7766aa'), // dusty violet
+  new THREE.Color('#448888'), // muted cyan
 ];
 
 export const TechnoTunnel: React.FC = () => {
@@ -31,33 +30,33 @@ export const TechnoTunnel: React.FC = () => {
   const highPerf = useStore((s) => s.config.highPerformanceMode);
   const particleSpeed = useStore((s) => s.config.particleSpeed);
 
-  const starCount = useMemo(() => (highPerf ? 400 : 200), [highPerf]);
+  const starCount = useMemo(() => (highPerf ? 120 : 60), [highPerf]);
 
-  // Ring data: z positions that loop
+  // Ring data — evenly spaced, gentle drift
   const ringData = useMemo(() => {
     const arr: { z: number; radius: number; colorIdx: number; rotSpeed: number }[] = [];
     for (let i = 0; i < RING_COUNT; i++) {
       arr.push({
         z: -TUNNEL_DEPTH + (i / RING_COUNT) * TUNNEL_DEPTH,
-        radius: 2.5 + Math.sin(i * 0.5) * 0.8,
-        colorIdx: i % NEON_COLORS.length,
-        rotSpeed: 0.2 + Math.random() * 0.4,
+        radius: 3.0 + Math.sin(i * 0.7) * 0.4,
+        colorIdx: i % COLORS.length,
+        rotSpeed: 0.03 + Math.random() * 0.05,
       });
     }
     return arr;
   }, []);
 
-  // Speed-line stars
+  // Subtle floating motes
   const stars = useMemo(() => {
     const pos = new Float32Array(starCount * 3);
     const spd = new Float32Array(starCount);
     for (let i = 0; i < starCount; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const r = 1.5 + Math.random() * 4;
+      const r = 1.0 + Math.random() * 3.5;
       pos[i * 3] = Math.cos(angle) * r;
       pos[i * 3 + 1] = Math.sin(angle) * r;
       pos[i * 3 + 2] = -Math.random() * TUNNEL_DEPTH;
-      spd[i] = 0.15 + Math.random() * 0.25;
+      spd[i] = 0.03 + Math.random() * 0.06;
     }
     return { pos, spd };
   }, [starCount]);
@@ -72,9 +71,9 @@ export const TechnoTunnel: React.FC = () => {
       size / 2, size / 2, 0,
       size / 2, size / 2, size / 2,
     );
-    grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.3, 'rgba(200,220,255,0.6)');
-    grad.addColorStop(1, 'rgba(150,180,255,0)');
+    grad.addColorStop(0, 'rgba(180,210,240,0.8)');
+    grad.addColorStop(0.4, 'rgba(150,185,220,0.3)');
+    grad.addColorStop(1, 'rgba(120,160,200,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, size, size);
     const tex = new THREE.CanvasTexture(canvas);
@@ -94,7 +93,7 @@ export const TechnoTunnel: React.FC = () => {
     const dt = accum;
     accum = 0;
 
-    const speed = 6 * particleSpeed; // tunnel scroll speed
+    const speed = 1.8 * particleSpeed; // gentle drift
 
     // ── Update rings ──
     for (let i = 0; i < RING_COUNT; i++) {
@@ -102,29 +101,29 @@ export const TechnoTunnel: React.FC = () => {
       const mesh = ringsRef.current[i];
       if (!mesh) continue;
 
-      // Move toward camera
       ring.z += speed * dt;
       if (ring.z > 2) {
         ring.z -= TUNNEL_DEPTH;
-        ring.colorIdx = (ring.colorIdx + 1) % NEON_COLORS.length;
+        ring.colorIdx = (ring.colorIdx + 1) % COLORS.length;
       }
 
       mesh.position.z = ring.z;
       mesh.rotation.z = globalTime * ring.rotSpeed;
 
-      // Scale based on distance (perspective)
+      // Scale based on depth
       const t = (ring.z + TUNNEL_DEPTH) / TUNNEL_DEPTH;
       const scale = 0.3 + t * 0.7;
       mesh.scale.set(ring.radius * scale, ring.radius * scale, 1);
 
-      // Pulse opacity based on proximity to camera
-      const opacity = Math.min(1, t * 1.5) * (0.5 + Math.sin(globalTime * 3 + i) * 0.2);
+      // Gentle breathing opacity
+      const proximity = Math.min(1, t * 1.2);
+      const breathe = 0.6 + Math.sin(globalTime * 0.8 + i * 0.9) * 0.15;
       const mat = mesh.material as THREE.MeshBasicMaterial;
-      mat.color.copy(NEON_COLORS[ring.colorIdx]);
-      mat.opacity = opacity * 0.7;
+      mat.color.copy(COLORS[ring.colorIdx]);
+      mat.opacity = proximity * breathe * 0.25;
     }
 
-    // ── Update speed-line stars ──
+    // ── Update floating motes ──
     if (starsRef.current) {
       for (let i = 0; i < starCount; i++) {
         const { pos, spd } = stars;
@@ -133,17 +132,17 @@ export const TechnoTunnel: React.FC = () => {
         if (pos[i * 3 + 2] > 2) {
           pos[i * 3 + 2] -= TUNNEL_DEPTH;
           const angle = Math.random() * Math.PI * 2;
-          const r = 1.5 + Math.random() * 4;
+          const r = 1.0 + Math.random() * 3.5;
           pos[i * 3] = Math.cos(angle) * r;
           pos[i * 3 + 1] = Math.sin(angle) * r;
         }
 
         const zNorm = (pos[i * 3 + 2] + TUNNEL_DEPTH) / TUNNEL_DEPTH;
-        const s = 0.01 + zNorm * 0.04;
+        const s = 0.02 + zNorm * 0.03;
 
         dummy.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
         dummy.rotation.set(0, 0, 0);
-        dummy.scale.set(s, s * (1 + spd[i] * 3), 1);
+        dummy.scale.set(s, s, 1);
         dummy.updateMatrix();
         starsRef.current.setMatrixAt(i, dummy.matrix);
       }
@@ -153,7 +152,7 @@ export const TechnoTunnel: React.FC = () => {
 
   return (
     <group ref={groupRef}>
-      {/* Wireframe rings */}
+      {/* Soft wireframe rings */}
       {ringData.map((_, i) => (
         <mesh
           key={i}
@@ -161,29 +160,29 @@ export const TechnoTunnel: React.FC = () => {
             if (el) ringsRef.current[i] = el;
           }}
         >
-          <ringGeometry args={[0.92, 1.0, 32]} />
+          <ringGeometry args={[0.94, 1.0, 48]} />
           <meshBasicMaterial
             transparent
-            opacity={0.5}
+            opacity={0.2}
             depthWrite={false}
             side={THREE.DoubleSide}
             blending={THREE.AdditiveBlending}
-            color={NEON_COLORS[i % NEON_COLORS.length]}
+            color={COLORS[i % COLORS.length]}
           />
         </mesh>
       ))}
 
-      {/* Speed-line stars */}
+      {/* Floating motes */}
       <instancedMesh ref={starsRef} args={[undefined, undefined, starCount]}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial
           map={starTexture}
           transparent
-          opacity={0.7}
+          opacity={0.35}
           depthWrite={false}
           side={THREE.DoubleSide}
           blending={THREE.AdditiveBlending}
-          color="#aaccff"
+          color="#8ab4d0"
         />
       </instancedMesh>
     </group>

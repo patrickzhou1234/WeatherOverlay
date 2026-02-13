@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────
 // Aurora.tsx — Shimmering aurora borealis ribbons that
-// undulate across the top of the viewport. Multiple layered
-// ribbon meshes with vertex displacement create a flowing
-// curtain of green/purple/cyan light.
+// undulate across the upper portion of the viewport.
+// Multiple layered ribbon meshes with vertex displacement
+// create a flowing curtain of green/purple/cyan light.
 // ─────────────────────────────────────────────────────────
 
 import React, { useRef, useMemo } from 'react';
@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { useStore } from '../../store/useStore';
 import { TARGET_FPS } from '../../../shared/constants';
 
-const RIBBON_COUNT = 4;
+const RIBBON_COUNT = 5;
 const SEGMENTS = 80;
 
 interface RibbonDef {
@@ -36,44 +36,54 @@ export const Aurora: React.FC = () => {
   const ribbons: RibbonDef[] = useMemo(
     () => [
       {
-        baseY: 3.2,
-        amplitude: 0.8,
-        frequency: 0.6,
+        baseY: 1.6,
+        amplitude: 0.5,
+        frequency: 0.5,
         speed: 0.3,
         color: new THREE.Color('#00ff88'),
-        opacity: 0.25,
-        width: 1.8,
+        opacity: 0.35,
+        width: 1.6,
         phaseOffset: 0,
       },
       {
-        baseY: 3.6,
-        amplitude: 1.0,
-        frequency: 0.45,
+        baseY: 2.0,
+        amplitude: 0.6,
+        frequency: 0.4,
         speed: 0.25,
         color: new THREE.Color('#22ddaa'),
-        opacity: 0.2,
-        width: 2.2,
+        opacity: 0.3,
+        width: 1.8,
         phaseOffset: 1.5,
       },
       {
-        baseY: 3.0,
-        amplitude: 0.6,
-        frequency: 0.8,
+        baseY: 1.2,
+        amplitude: 0.4,
+        frequency: 0.7,
         speed: 0.35,
         color: new THREE.Color('#8844ff'),
-        opacity: 0.18,
-        width: 1.5,
+        opacity: 0.28,
+        width: 1.4,
         phaseOffset: 3.0,
       },
       {
-        baseY: 3.8,
-        amplitude: 1.2,
-        frequency: 0.35,
+        baseY: 2.3,
+        amplitude: 0.7,
+        frequency: 0.3,
         speed: 0.2,
         color: new THREE.Color('#00ccdd'),
-        opacity: 0.15,
-        width: 2.5,
+        opacity: 0.22,
+        width: 2.0,
         phaseOffset: 4.5,
+      },
+      {
+        baseY: 0.8,
+        amplitude: 0.35,
+        frequency: 0.6,
+        speed: 0.28,
+        color: new THREE.Color('#44ee99'),
+        opacity: 0.2,
+        width: 1.2,
+        phaseOffset: 2.2,
       },
     ],
     [],
@@ -125,7 +135,7 @@ export const Aurora: React.FC = () => {
         posAttr.setY(i, vertY);
 
         // Slight Z undulation for depth
-        const zDisp = Math.sin(x * 0.4 + t * 0.6 + ribbon.phaseOffset) * 0.5;
+        const zDisp = Math.sin(x * 0.4 + t * 0.6 + ribbon.phaseOffset) * 0.3;
         posAttr.setZ(i, zDisp);
       }
 
