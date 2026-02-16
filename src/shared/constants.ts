@@ -34,6 +34,7 @@ export const DEFAULT_UI: UIState = {
   settingsVisible: false,
   isError: false,
   errorMessage: null,
+  successMessage: null,
 };
 
 // ── Numeric Guardrails ─────────────────────────────────

@@ -23,8 +23,13 @@ const HEADERS = { 'User-Agent': 'CozyOverlay/1.0 (weather-overlay-app)' };
 /** Geocode a US ZIP/postal code to lat/lon + city name via Nominatim. */
 async function geocodeZip(zip: string): Promise<{ lat: number; lon: number; city: string | null }> {
   const url = `${NOMINATIM_URL}?postalcode=${encodeURIComponent(zip)}&country=US&format=json&limit=1&addressdetails=1`;
-  const res = await fetch(url, { headers: HEADERS });
-  if (!res.ok) throw new Error(`Nominatim ${res.status}: ${res.statusText}`);
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: HEADERS });
+  } catch (err) {
+    throw new Error(`Geocoding failed — could not reach Nominatim (${url}). ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!res.ok) throw new Error(`Geocoding error: Nominatim returned ${res.status} ${res.statusText} (${url})`);
   const data = await res.json();
   if (!data.length) throw new Error(`No results for ZIP "${zip}". Is it a valid US ZIP code?`);
 
@@ -41,15 +46,25 @@ async function geocodeZip(zip: string): Promise<{ lat: number; lon: number; city
 async function getStationUrl(lat: number, lon: number): Promise<string> {
   // NWS wants max 4 decimal places
   const ptUrl = `${NWS_BASE_URL}/points/${lat.toFixed(4)},${lon.toFixed(4)}`;
-  const res = await fetch(ptUrl, { headers: HEADERS });
-  if (!res.ok) throw new Error(`NWS /points ${res.status}: ${res.statusText}`);
+  let res: Response;
+  try {
+    res = await fetch(ptUrl, { headers: HEADERS });
+  } catch (err) {
+    throw new Error(`NWS points lookup failed — could not reach ${ptUrl}. ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!res.ok) throw new Error(`NWS /points returned ${res.status}: ${res.statusText} (${ptUrl})`);
   const data = await res.json();
   const stationsUrl: string | undefined =
     data?.properties?.observationStations;
   if (!stationsUrl) throw new Error('NWS did not return an observation stations URL.');
   // Fetch first station
-  const stRes = await fetch(stationsUrl, { headers: HEADERS });
-  if (!stRes.ok) throw new Error(`NWS /stations ${stRes.status}`);
+  let stRes: Response;
+  try {
+    stRes = await fetch(stationsUrl, { headers: HEADERS });
+  } catch (err) {
+    throw new Error(`NWS stations lookup failed — could not reach ${stationsUrl}. ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!stRes.ok) throw new Error(`NWS /stations returned ${stRes.status} (${stationsUrl})`);
   const stData = await stRes.json();
   const firstStation: string | undefined = stData?.features?.[0]?.id;
   if (!firstStation) throw new Error('No observation stations found for your location.');
@@ -76,8 +91,13 @@ function mapNwsDescription(desc: string): WeatherCondition {
  */
 async function fetchObservation(stationUrl: string): Promise<NWSObservation> {
   const url = `${stationUrl}/observations?limit=10`;
-  const res = await fetch(url, { headers: HEADERS });
-  if (!res.ok) throw new Error(`NWS observation ${res.status}: ${res.statusText}`);
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: HEADERS });
+  } catch (err) {
+    throw new Error(`Observation fetch failed — could not reach ${url}. ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!res.ok) throw new Error(`NWS observation returned ${res.status}: ${res.statusText} (${url})`);
   const data = await res.json();
   const features: any[] = data?.features;
   if (!features?.length) throw new Error('No observations available for your station.');
@@ -136,6 +156,7 @@ export function useWeather(): void {
   const { zipCode, refreshInterval, weatherOverride } = useStore((s) => s.config);
   const syncEnvironment = useStore((s) => s.syncEnvironment);
   const setError = useStore((s) => s.setError);
+  const setSuccess = useStore((s) => s.setSuccess);
   const refetchKey = useStore((s) => s._weatherRefetchKey);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -161,12 +182,21 @@ export function useWeather(): void {
       const obs = await fetchObservation(cachedStationUrl!);
       syncEnvironment(obs);
       setError(null);
+      setSuccess('Weather updated successfully!');
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Unknown weather fetch error';
+      let message: string;
+      if (err instanceof TypeError) {
+        // TypeError is what fetch() throws on network-level failures
+        message = `Network error: ${err.message}. Check your internet connection.`;
+      } else if (err instanceof Error) {
+        message = err.message;
+      } else {
+        message = `Unknown weather fetch error: ${String(err)}`;
+      }
+      console.error('[useWeather] Fetch failed:', err);
       setError(message);
     }
-  }, [zipCode, syncEnvironment, setError]);
+  }, [zipCode, syncEnvironment, setError, setSuccess]);
 
   // Hydrate cached weather on mount so we don't wait for first fetch
   useEffect(() => {

@@ -72,6 +72,8 @@ export interface UIState {
   settingsVisible: boolean;
   isError: boolean;
   errorMessage: string | null;
+  /** Transient success message shown briefly after a successful action. */
+  successMessage: string | null;
 }
 
 export interface AppState {

@@ -67,12 +67,12 @@ function displayTemp(tempC: number, unit: 'C' | 'F'): string {
 }
 
 const WEATHER_META: Record<string, { Icon: React.ElementType; label: string; color: string }> = {
-  CLEAR:        { Icon: WbSunnyIcon,     label: 'Clear',        color: '#FFD54F' },
-  CLOUDY:       { Icon: CloudQueueIcon,  label: 'Cloudy',       color: '#90A4AE' },
-  RAIN:         { Icon: WaterDropIcon,   label: 'Rain',         color: '#4FC3F7' },
-  THUNDERSTORM: { Icon: ThunderstormIcon,label: 'Thunderstorm', color: '#CE93D8' },
-  SNOW:         { Icon: AcUnitIcon,      label: 'Snow',         color: '#E0E0E0' },
-  FOG:          { Icon: FoggyIcon,       label: 'Fog',          color: '#78909C' },
+  CLEAR: { Icon: WbSunnyIcon, label: 'Clear', color: '#FFD54F' },
+  CLOUDY: { Icon: CloudQueueIcon, label: 'Cloudy', color: '#90A4AE' },
+  RAIN: { Icon: WaterDropIcon, label: 'Rain', color: '#4FC3F7' },
+  THUNDERSTORM: { Icon: ThunderstormIcon, label: 'Thunderstorm', color: '#CE93D8' },
+  SNOW: { Icon: AcUnitIcon, label: 'Snow', color: '#E0E0E0' },
+  FOG: { Icon: FoggyIcon, label: 'Fog', color: '#78909C' },
 };
 
 // ── Main HUD Component ──────────────────────────────
@@ -242,6 +242,27 @@ export const HUD: React.FC = () => {
           }}
         >
           {ui.errorMessage}
+        </Alert>
+      </Snackbar>
+
+      {/* ── Success Snackbar ── */}
+      <Snackbar
+        open={!!ui.successMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        TransitionComponent={Slide}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          sx={{
+            backdropFilter: 'blur(24px)',
+            background: alpha('#1a2e1a', 0.92),
+            border: '1px solid rgba(76,175,80,0.2)',
+            color: '#fff',
+            '& .MuiAlert-icon': { color: '#4caf50' },
+          }}
+        >
+          {ui.successMessage}
         </Alert>
       </Snackbar>
 

@@ -80,6 +80,9 @@ interface AppActions {
   /** Set an error visible to the user. */
   setError: (message: string | null) => void;
 
+  /** Show a transient success toast (auto-dismissed after ~3 s). */
+  setSuccess: (message: string | null) => void;
+
   /** Reset environment + ui to defaults (tray "Reset View"). */
   resetView: () => void;
 }
@@ -101,6 +104,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     ...DEFAULT_UI,
     settingsVisible: needsSetup,
     isInteractive: needsSetup,
+    successMessage: null,
   },
   /** Bumped when switching to Auto to trigger a fresh weather fetch. */
   _weatherRefetchKey: 0,
@@ -186,6 +190,24 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         errorMessage: message,
       },
     });
+  },
+
+  setSuccess: (message) => {
+    set({
+      ui: {
+        ...get().ui,
+        successMessage: message,
+      },
+    });
+    // Auto-dismiss after 3 seconds
+    if (message) {
+      setTimeout(() => {
+        // Only clear if it's still the same message
+        if (get().ui.successMessage === message) {
+          set({ ui: { ...get().ui, successMessage: null } });
+        }
+      }, 3000);
+    }
   },
 
   resetView: () => {
