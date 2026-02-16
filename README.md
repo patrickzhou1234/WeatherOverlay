@@ -16,7 +16,7 @@ CozyOverlay brings the atmosphere of the outdoors directly to your desktop. Usin
 * **Performance Metrics:** System monitoring integration via **systeminformation**.
 * **Modern Stack:** Built with **React**, **TypeScript**, and **Zustand** for state management.
 
-![1771225738205](image/README/1771225738205.png)
+![1771225848907](image/README/1771225848907.png)
 
 ## Getting Started
 
