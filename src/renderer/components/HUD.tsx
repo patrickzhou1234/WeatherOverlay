@@ -31,6 +31,7 @@ import {
   Slide,
   Fade,
   alpha,
+  IconButton,
 } from '@mui/material';
 
 // ── MUI Icons ────────────────────────────────────────
@@ -56,6 +57,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import AirIcon from '@mui/icons-material/Air';
 import BatteryAlertIcon from '@mui/icons-material/BatteryAlert';
 import SaveIcon from '@mui/icons-material/Save';
+import MinimizeIcon from '@mui/icons-material/Remove';
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -88,6 +90,7 @@ export const HUD: React.FC = () => {
 
   const settingsOpen = ui.settingsVisible;
   const [localZip, setLocalZip] = useState(config.zipCode ?? '');
+  const [infoPanelMinimized, setInfoPanelMinimized] = useState(false);
 
   // Sync local ZIP when settings panel opens (in case config changed externally)
   useEffect(() => {
@@ -154,76 +157,123 @@ export const HUD: React.FC = () => {
       </Tooltip>
 
       {/* ── Status Card (bottom-left) ── */}
-      <Fade in timeout={400}>
-        <Card
-          elevation={8}
-          sx={{
-            position: 'absolute',
-            bottom: 24,
-            left: 24,
-            opacity: overlayAlpha,
-            transition: 'opacity 0.3s ease',
-            borderRadius: 3,
-            overflow: 'hidden',
-            minWidth: 220,
-          }}
-        >
-          {/* Gradient accent strip */}
-          <Box sx={{ height: 2, background: GRADIENT }} />
+      {infoPanelMinimized ? (
+        /* ── Minimized: tiny weather-icon FAB ── */
+        <Tooltip title="Show info panel" placement="right" arrow>
+          <Fab
+            data-interactive="true"
+            size="small"
+            onClick={() => setInfoPanelMinimized(false)}
+            sx={{
+              pointerEvents: 'auto',
+              position: 'absolute',
+              bottom: 24,
+              left: 24,
+              width: 36,
+              height: 36,
+              minHeight: 36,
+              opacity: overlayAlpha,
+              background: `linear-gradient(135deg, ${alpha(weather.color, 0.22)} 0%, ${alpha(weather.color, 0.06)} 100%)`,
+              border: `1px solid ${alpha(weather.color, 0.15)}`,
+              boxShadow: `0 2px 12px ${alpha(weather.color, 0.18)}`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${alpha(weather.color, 0.32)} 0%, ${alpha(weather.color, 0.12)} 100%)`,
+              },
+            }}
+          >
+            <WeatherIcon sx={{ fontSize: 18, color: weather.color }} />
+          </Fab>
+        </Tooltip>
+      ) : (
+        /* ── Expanded: full status card ── */
+        <Fade in timeout={400}>
+          <Card
+            elevation={8}
+            sx={{
+              position: 'absolute',
+              bottom: 24,
+              left: 24,
+              opacity: overlayAlpha,
+              transition: 'opacity 0.3s ease',
+              borderRadius: 3,
+              overflow: 'hidden',
+              minWidth: 220,
+            }}
+          >
+            {/* Gradient accent strip */}
+            <Box sx={{ height: 2, background: GRADIENT }} />
 
-          <CardContent sx={{ p: '14px 18px !important', '&:last-child': { pb: '14px !important' } }}>
-            <Stack spacing={1.2}>
-              {/* City + weather row */}
-              <Stack direction="row" alignItems="center" spacing={1.2}>
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 2,
-                    background: `linear-gradient(135deg, ${alpha(weather.color, 0.16)} 0%, ${alpha(weather.color, 0.04)} 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: `1px solid ${alpha(weather.color, 0.1)}`,
-                    flexShrink: 0,
-                  }}
-                >
-                  <WeatherIcon sx={{ fontSize: 22, color: weather.color }} />
-                </Box>
-                <Box>
-                  {environment.cityName && (
-                    <Typography variant="body2" fontWeight={600} lineHeight={1.3}>
-                      {environment.cityName}
+            <CardContent sx={{ p: '14px 18px !important', '&:last-child': { pb: '14px !important' } }}>
+              <Stack spacing={1.2}>
+                {/* City + weather row + minimize button */}
+                <Stack direction="row" alignItems="center" spacing={1.2}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      background: `linear-gradient(135deg, ${alpha(weather.color, 0.16)} 0%, ${alpha(weather.color, 0.04)} 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: `1px solid ${alpha(weather.color, 0.1)}`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <WeatherIcon sx={{ fontSize: 22, color: weather.color }} />
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {environment.cityName && (
+                      <Typography variant="body2" fontWeight={600} lineHeight={1.3} noWrap>
+                        {environment.cityName}
+                      </Typography>
+                    )}
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {weather.label} · {displayTemp(environment.temperature, config.temperatureUnit)}
                     </Typography>
+                  </Box>
+                  <Tooltip title="Minimize" placement="top" arrow>
+                    <IconButton
+                      data-interactive="true"
+                      size="small"
+                      onClick={() => setInfoPanelMinimized(true)}
+                      sx={{
+                        pointerEvents: 'auto',
+                        width: 28,
+                        height: 28,
+                        flexShrink: 0,
+                        color: 'text.secondary',
+                        '&:hover': { color: 'text.primary', bgcolor: 'rgba(255,255,255,0.08)' },
+                      }}
+                    >
+                      <MinimizeIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+
+                <Divider />
+
+                {/* System stats row */}
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <StatChip icon={<MemoryIcon sx={{ fontSize: 14 }} />} label={`CPU ${system.cpuLoad}%`} />
+                  <StatChip icon={<StorageIcon sx={{ fontSize: 14 }} />} label={`MEM ${system.memoryUsage}%`} />
+                  <StatChip icon={<AirIcon sx={{ fontSize: 14 }} />} label={`${environment.windSpeed.toFixed(1)}`} />
+                  {system.isBatteryLow && (
+                    <Chip
+                      icon={<BatteryAlertIcon sx={{ fontSize: 14 }} />}
+                      label="Low"
+                      size="small"
+                      color="error"
+                      variant="outlined"
+                      sx={{ height: 22, fontSize: '0.6875rem' }}
+                    />
                   )}
-                  <Typography variant="caption" color="text.secondary">
-                    {weather.label} · {displayTemp(environment.temperature, config.temperatureUnit)}
-                  </Typography>
-                </Box>
+                </Stack>
               </Stack>
-
-              <Divider />
-
-              {/* System stats row */}
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <StatChip icon={<MemoryIcon sx={{ fontSize: 14 }} />} label={`CPU ${system.cpuLoad}%`} />
-                <StatChip icon={<StorageIcon sx={{ fontSize: 14 }} />} label={`MEM ${system.memoryUsage}%`} />
-                <StatChip icon={<AirIcon sx={{ fontSize: 14 }} />} label={`${environment.windSpeed.toFixed(1)}`} />
-                {system.isBatteryLow && (
-                  <Chip
-                    icon={<BatteryAlertIcon sx={{ fontSize: 14 }} />}
-                    label="Low"
-                    size="small"
-                    color="error"
-                    variant="outlined"
-                    sx={{ height: 22, fontSize: '0.6875rem' }}
-                  />
-                )}
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Fade>
+            </CardContent>
+          </Card>
+        </Fade>
+      )}
 
       {/* ── Error Snackbar ── */}
       <Snackbar
